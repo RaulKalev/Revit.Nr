@@ -8,10 +8,10 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="Renumber"
-    Width="480"
-    Height="390"
-    MinWidth="380"
-    MinHeight="320"
+    Width="300"
+    Height="520"
+    MinWidth="190"
+    MinHeight="380"
     AllowsTransparency="True"
     Background="Transparent"
     WindowStyle="None"
@@ -27,6 +27,7 @@
                     <SolidColorBrush x:Key="SecondaryBackgroundBrush" Color="#FF292929" />
                     <SolidColorBrush x:Key="BorderBrush" Color="#FF444444" />
                     <SolidColorBrush x:Key="ForegroundBrush" Color="#EEEEEE" />
+                    <ui:InverseBooleanConverter x:Key="InverseBoolConverter" />
                 </ResourceDictionary>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.ComboBox.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Dark.xaml" />
@@ -104,58 +105,386 @@
                 </ToggleButton>
 
                 <!-- Main Form Content (Row 1) -->
-                <Grid Grid.Row="1" Margin="24,16,24,20">
+                <Grid Grid.Row="1" Margin="24,10,24,20">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />  <!-- Parameter Name label -->
-                        <RowDefinition Height="6" />
-                        <RowDefinition Height="Auto" />  <!-- Parameter Name TextBox -->
-                        <RowDefinition Height="16" />
-                        <RowDefinition Height="Auto" />  <!-- Value label -->
-                        <RowDefinition Height="6" />
-                        <RowDefinition Height="Auto" />  <!-- Value TextBox -->
-                        <RowDefinition Height="20" />
-                        <RowDefinition Height="Auto" />  <!-- Button -->
-                        <RowDefinition Height="14" />
-                        <RowDefinition Height="*" />     <!-- Result text -->
+                        <RowDefinition Height="Auto" />  <!-- Mode selector -->
+                        <RowDefinition Height="10" />
+                        <RowDefinition Height="*" />     <!-- Mode-specific panels -->
                     </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="0"
-                               Text="Parameter Name"
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               FontSize="13" FontWeight="SemiBold" />
+                    <!-- Mode selector: EL / LPS / Üld -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <CheckBox x:Name="ElModeCheck"
+                                  Content="EL"
+                                  IsChecked="True"
+                                  Checked="ElModeCheck_Checked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  Margin="0,0,20,0" />
+                        <CheckBox x:Name="LpsModeCheck"
+                                  Content="LPS"
+                                  IsChecked="False"
+                                  Checked="LpsModeCheck_Checked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  Margin="0,0,20,0" />
+                        <CheckBox x:Name="UldModeCheck"
+                                  Content="Üld"
+                                  IsChecked="False"
+                                  Checked="UldModeCheck_Checked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}" />
+                    </StackPanel>
 
-                    <TextBox Grid.Row="2"
-                             x:Name="ParameterNameBox"
-                             Style="{StaticResource CustomTextBoxStyle}"
-                             HorizontalAlignment="Stretch" />
+                    <!-- ============================================================
+                         EL Panel (existing functionality)
+                    ============================================================ -->
+                    <Grid x:Name="ElPanel" Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name TextBox -->
+                            <RowDefinition Height="16" />
+                            <RowDefinition Height="Auto" />  <!-- Value label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value TextBox -->
+                            <RowDefinition Height="20" />
+                            <RowDefinition Height="Auto" />  <!-- Button -->
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="*" />     <!-- Result text -->
+                        </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Row="4"
-                               Text="Value"
-                               Foreground="{DynamicResource ForegroundBrush}"
-                               FontSize="13" FontWeight="SemiBold" />
-
-                    <TextBox Grid.Row="6"
-                             x:Name="ValueBox"
-                             Style="{StaticResource CustomTextBoxStyle}"
-                             HorizontalAlignment="Stretch" />
-
-                    <Button Grid.Row="8"
-                            x:Name="SelectButton"
-                            Content="Select Electrical Fixtures"
-                            Click="SelectButton_Click"
-                            Style="{StaticResource CustomActionButtonStyle}"
-                            Width="Auto"
-                            HorizontalAlignment="Stretch"
-                            Height="50" />
-
-                    <ScrollViewer Grid.Row="10" VerticalScrollBarVisibility="Auto">
-                        <TextBlock x:Name="ResultText"
+                        <TextBlock Grid.Row="0"
+                                   Text="Parameter Name"
                                    Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="12"
-                                   TextWrapping="Wrap"
-                                   VerticalAlignment="Top"
-                                   Opacity="0.85" />
-                    </ScrollViewer>
+                                   FontSize="13" FontWeight="SemiBold" />
+
+                        <TextBox Grid.Row="2"
+                                 x:Name="ParameterNameBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <Grid Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Value"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="ElDirectionUpCheck"
+                                          Content="↑"
+                                          IsChecked="True"
+                                          Checked="ElDirectionUpCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="ElDirectionDownCheck"
+                                          Content="↓"
+                                          IsChecked="False"
+                                          Checked="ElDirectionDownCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <TextBox Grid.Row="6"
+                                 x:Name="ValueBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <Button Grid.Row="8"
+                                x:Name="SelectButton"
+                                Content="Select Electrical Fixtures"
+                                Click="SelectButton_Click"
+                                Style="{StaticResource CustomActionButtonStyle}"
+                                Width="Auto"
+                                HorizontalAlignment="Stretch"
+                                Height="50" />
+
+                        <ScrollViewer Grid.Row="10" VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="ResultText"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"
+                                       Opacity="0.85" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- ============================================================
+                         LPS Panel
+                    ============================================================ -->
+                    <Grid x:Name="LpsPanel" Grid.Row="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />  <!-- Parameters label + Add button -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" MaxHeight="160" />  <!-- Param list -->
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />  <!-- Value label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value TextBox -->
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />  <!-- Select button -->
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />     <!-- Result text -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Parameters label + Add button -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Parameters"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <Button Grid.Column="1"
+                                    x:Name="LpsAddParamButton"
+                                    Content="+"
+                                    Click="LpsAddParam_Click"
+                                    Style="{StaticResource CustomActionButtonStyle}"
+                                    Width="32" Height="24"
+                                    Padding="0"
+                                    FontSize="16" FontWeight="Bold" />
+                        </Grid>
+
+                        <!-- Parameter row list -->
+                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl x:Name="LpsParamList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,2,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />  <!-- Active CB -->
+                                                <ColumnDefinition Width="*" />     <!-- Name TextBox -->
+                                                <ColumnDefinition Width="Auto" />  <!-- Value CB -->
+                                                <ColumnDefinition Width="Auto" />  <!-- InnerRange CB -->
+                                                <ColumnDefinition Width="Auto" />  <!-- Remove button -->
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Active (left) checkbox -->
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,6,0" />
+                                            <!-- Parameter name -->
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                     Style="{StaticResource CustomTextBoxStyle}"
+                                                     VerticalAlignment="Center" />
+                                            <!-- Value sequence checkbox (!UseInnerRange) -->
+                                            <CheckBox Grid.Column="2"
+                                                      Content="Value"
+                                                      IsChecked="{Binding UseInnerRange, Mode=TwoWay,
+                                                                  Converter={StaticResource InverseBoolConverter}}"
+                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="6,0,0,0" />
+                                            <!-- InnerRange sequence checkbox -->
+                                            <CheckBox Grid.Column="3"
+                                                      Content="IR"
+                                                      IsChecked="{Binding UseInnerRange, Mode=TwoWay}"
+                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="4,0,0,0" />
+                                            <!-- Remove button -->
+                                            <Button Grid.Column="4"
+                                                    Content="−"
+                                                    Tag="{Binding}"
+                                                    Click="LpsRemoveParam_Click"
+                                                    Style="{StaticResource CustomActionButtonStyle}"
+                                                    Width="28" Height="24"
+                                                    Padding="0"
+                                                    FontSize="14" FontWeight="Bold"
+                                                    Margin="6,0,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- Value label + direction -->
+                        <Grid Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Value"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="LpsDirectionUpCheck"
+                                          Content="↑"
+                                          IsChecked="True"
+                                          Checked="LpsDirectionUpCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="LpsDirectionDownCheck"
+                                          Content="↓"
+                                          IsChecked="False"
+                                          Checked="LpsDirectionDownCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Value TextBox -->
+                        <TextBox Grid.Row="6"
+                                 x:Name="LpsValueBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Select button -->
+                        <Button Grid.Row="8"
+                                x:Name="LpsSelectButton"
+                                Content="Select Security Devices"
+                                Click="LpsSelectButton_Click"
+                                Style="{StaticResource CustomActionButtonStyle}"
+                                Width="Auto"
+                                HorizontalAlignment="Stretch"
+                                Height="50" />
+
+                        <!-- Result text -->
+                        <ScrollViewer Grid.Row="10" VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="LpsResultText"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"
+                                       Opacity="0.85" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- ============================================================
+                         Üld Panel (general category parameter write)
+                    ============================================================ -->
+                    <Grid x:Name="UldPanel" Grid.Row="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />  <!-- Category label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Category ComboBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name TextBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Value label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value TextBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Prefix / Suffix row -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Select button -->
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />     <!-- Result text -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Category label -->
+                        <TextBlock Grid.Row="0"
+                                   Text="Category"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="13" FontWeight="SemiBold" />
+
+                        <!-- Category ComboBox -->
+                        <ComboBox Grid.Row="2"
+                                  x:Name="UldCategoryCombo"
+                                  Style="{StaticResource DarkThemeComboBox}"
+                                  HorizontalAlignment="Stretch" />
+
+                        <!-- Parameter Name label -->
+                        <TextBlock Grid.Row="4"
+                                   Text="Parameter Name"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="13" FontWeight="SemiBold" />
+
+                        <!-- Parameter Name TextBox -->
+                        <TextBox Grid.Row="6"
+                                 x:Name="UldParamNameBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Value label + direction -->
+                        <Grid Grid.Row="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Value"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="UldDirectionUpCheck"
+                                          Content="↑"
+                                          IsChecked="True"
+                                          Checked="UldDirectionUpCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="UldDirectionDownCheck"
+                                          Content="↓"
+                                          IsChecked="False"
+                                          Checked="UldDirectionDownCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Value TextBox -->
+                        <TextBox Grid.Row="10"
+                                 x:Name="UldValueBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Prefix / Suffix row -->
+                        <Grid Grid.Row="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Prefix"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Margin="0,0,0,4" />
+                                <TextBox x:Name="UldPrefixBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Suffix"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="12" FontWeight="SemiBold"
+                                           Margin="0,0,0,4" />
+                                <TextBox x:Name="UldSuffixBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Select button -->
+                        <Button Grid.Row="14"
+                                x:Name="UldSelectButton"
+                                Content="Select Elements"
+                                Click="UldSelectButton_Click"
+                                Style="{StaticResource CustomActionButtonStyle}"
+                                Width="Auto"
+                                HorizontalAlignment="Stretch"
+                                Height="50" />
+
+                        <!-- Result text -->
+                        <ScrollViewer Grid.Row="16" VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="UldResultText"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"
+                                       Opacity="0.85" />
+                        </ScrollViewer>
+                    </Grid>
+
                 </Grid>
             </Grid>
         </Border>

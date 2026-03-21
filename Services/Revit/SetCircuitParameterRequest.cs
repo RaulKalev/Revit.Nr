@@ -18,12 +18,14 @@ namespace Renumber.Services.Revit
     {
         private readonly string _parameterName;
         private readonly string _value;
+        private readonly bool _goDown;
         private readonly Action<string, string> _onComplete;
 
-        public SetCircuitParameterRequest(string parameterName, string value, Action<string, string> onComplete)
+        public SetCircuitParameterRequest(string parameterName, string value, bool goDown, Action<string, string> onComplete)
         {
             _parameterName = parameterName;
             _value = value;
+            _goDown = goDown;
             _onComplete = onComplete;
         }
 
@@ -117,9 +119,9 @@ namespace Renumber.Services.Revit
                 if (errors.Count > 0) line += $"  ({string.Join("; ", errors)})";
                 pickLines.Add(line);
 
-                // Increment value for the next pick (integers only)
+                // Advance value for the next pick
                 if (int.TryParse(currentValue, out int iv))
-                    currentValue = (iv + 1).ToString();
+                    currentValue = (iv + (_goDown ? -1 : 1)).ToString();
             }
 
             // next value to show in the box after the session ends

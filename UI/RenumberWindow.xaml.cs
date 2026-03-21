@@ -3,8 +3,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -22,6 +26,21 @@ namespace Renumber.UI
         private const string WindowHeightKey   = "RenumberWindow.Height";
         private const string ParameterNameKey  = "RenumberWindow.ParameterName";
         private const string ValueKey           = "RenumberWindow.Value";
+        // LPS config keys
+        private const string LpsModeKey        = "RenumberWindow.LpsMode";
+        private const string LpsParamsKey       = "RenumberWindow.LpsParams";
+        private const string LpsValueKey        = "RenumberWindow.LpsValue";
+        // Üld config keys
+        private const string UldModeKey         = "RenumberWindow.UldMode";
+        private const string UldCategoryKey     = "RenumberWindow.UldCategory";
+        private const string UldParamNameKey    = "RenumberWindow.UldParamName";
+        private const string UldValueKey        = "RenumberWindow.UldValue";
+        private const string UldPrefixKey       = "RenumberWindow.UldPrefix";
+        private const string UldSuffixKey       = "RenumberWindow.UldSuffix";
+        // Direction config keys
+        private const string ElDirectionKey     = "RenumberWindow.ElDirection";
+        private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
+        private const string UldDirectionKey    = "RenumberWindow.UldDirection";
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -35,6 +54,18 @@ namespace Renumber.UI
         private bool _isDataLoaded;
         private readonly UIApplication _uiApplication;
         private readonly Services.Revit.RevitExternalEventService _externalEventService;
+        // LPS state
+        private ObservableCollection<LpsParamEntry> _lpsParams;
+
+        // Üld category list entry
+        private sealed class UldCategoryItem
+        {
+            public string Label { get; }
+            public Autodesk.Revit.DB.BuiltInCategory Category { get; }
+            public UldCategoryItem(string label, Autodesk.Revit.DB.BuiltInCategory cat)
+            { Label = label; Category = cat; }
+            public override string ToString() => Label;
+        }
 
         #endregion
 
@@ -53,9 +84,29 @@ namespace Renumber.UI
             Closed += MainWindow_Closed;
             MouseLeftButtonUp += Window_MouseLeftButtonUp;
 
+            // Initialise LPS param collection before loading config
+            _lpsParams = new ObservableCollection<LpsParamEntry>();
+
             LoadThemeState();
             LoadWindowState();
             LoadParameterNameState();
+
+            // Wire up the LPS param list once controls are ready
+            LpsParamList.ItemsSource = _lpsParams;
+
+            // Populate Üld category dropdown, then restore saved selection
+            PopulateUldCategories();
+            if (_pendingUldCategory != null)
+            {
+                foreach (var item in UldCategoryCombo.Items)
+                {
+                    if (item is UldCategoryItem ci && ci.Label == _pendingUldCategory)
+                    {
+                        UldCategoryCombo.SelectedItem = ci;
+                        break;
+                    }
+                }
+            }
 
             _isDataLoaded = true;
             TryShowWindow();
@@ -71,13 +122,411 @@ namespace Renumber.UI
             try
             {
                 var config = LoadConfig();
+
+                // EL state
                 if (config.TryGetValue(ParameterNameKey, out var rawName) && rawName is string s && !string.IsNullOrEmpty(s))
                     ParameterNameBox.Text = s;
                 if (config.TryGetValue(ValueKey, out var rawVal) && rawVal is string v && !string.IsNullOrEmpty(v))
                     ValueBox.Text = v;
+
+                // LPS mode flag
+                if (TryGetBool(config, LpsModeKey, out bool isLps) && isLps)
+                {
+                    ElModeCheck.IsChecked  = false;
+                    LpsModeCheck.IsChecked = true;
+                    ElPanel.Visibility  = Visibility.Collapsed;
+                    LpsPanel.Visibility = Visibility.Visible;
+                }
+
+                // LPS value
+                if (config.TryGetValue(LpsValueKey, out var rawLpsVal) && rawLpsVal is string lv && !string.IsNullOrEmpty(lv))
+                    LpsValueBox.Text = lv;
+
+                // LPS param rows
+                _lpsParams.Clear();
+                if (config.TryGetValue(LpsParamsKey, out var rawParams))
+                {
+                    JArray arr = null;
+                    if (rawParams is JArray ja) arr = ja;
+                    else if (rawParams is string ps) arr = JArray.Parse(ps);
+
+                    if (arr != null)
+                    {
+                        foreach (var tok in arr)
+                        {
+                            var entry = new LpsParamEntry
+                            {
+                                Name           = tok["name"]?.Value<string>() ?? string.Empty,
+                                IsChecked      = tok["checked"]?.Value<bool>() ?? false,
+                                UseInnerRange  = tok["innerRange"]?.Value<bool>() ?? false
+                            };
+                            entry.PropertyChanged += (_, __) => SaveLpsParams();
+                            _lpsParams.Add(entry);
+                        }
+                    }
+                }
+
+                // Default: one blank row if list is empty
+                if (_lpsParams.Count == 0)
+                    AddLpsParamRow(string.Empty, isChecked: true, useInnerRange: false);
+
+                // Üld mode flag (checked after LPS so last-saved mode wins)
+                if (TryGetBool(config, UldModeKey, out bool isUld) && isUld)
+                {
+                    ElModeCheck.IsChecked  = false;
+                    LpsModeCheck.IsChecked = false;
+                    UldModeCheck.IsChecked = true;
+                    ElPanel.Visibility  = Visibility.Collapsed;
+                    LpsPanel.Visibility = Visibility.Collapsed;
+                    UldPanel.Visibility = Visibility.Visible;
+                }
+
+                // Üld field values (restored after category dropdown is populated)
+                if (config.TryGetValue(UldParamNameKey, out var rawUldParam) && rawUldParam is string upn)
+                    UldParamNameBox.Text = upn;
+                if (config.TryGetValue(UldValueKey, out var rawUldVal) && rawUldVal is string uv)
+                    UldValueBox.Text = uv;
+                if (config.TryGetValue(UldPrefixKey, out var rawUldPfx) && rawUldPfx is string upfx)
+                    UldPrefixBox.Text = upfx;
+                if (config.TryGetValue(UldSuffixKey, out var rawUldSfx) && rawUldSfx is string usfx)
+                    UldSuffixBox.Text = usfx;
+                if (config.TryGetValue(UldCategoryKey, out var rawUldCat) && rawUldCat is string ucl)
+                {
+                    // Match by label — items not populated yet; defer to Loaded
+                    _pendingUldCategory = ucl;
+                }
+
+                // Direction state
+                if (TryGetBool(config, ElDirectionKey, out bool elDown) && elDown)
+                { ElDirectionUpCheck.IsChecked = false; ElDirectionDownCheck.IsChecked = true; }
+                if (TryGetBool(config, LpsDirectionKey, out bool lpsDown) && lpsDown)
+                { LpsDirectionUpCheck.IsChecked = false; LpsDirectionDownCheck.IsChecked = true; }
+                if (TryGetBool(config, UldDirectionKey, out bool uldDown) && uldDown)
+                { UldDirectionUpCheck.IsChecked = false; UldDirectionDownCheck.IsChecked = true; }
             }
             catch { }
         }
+
+        // Saved category label to restore after PopulateUldCategories runs
+        private string _pendingUldCategory;
+
+        #region Direction Toggle Handlers
+
+        private void ElDirectionUpCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElDirectionDownCheck != null) ElDirectionDownCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[ElDirectionKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void ElDirectionDownCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElDirectionUpCheck != null) ElDirectionUpCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[ElDirectionKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void LpsDirectionUpCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (LpsDirectionDownCheck != null) LpsDirectionDownCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[LpsDirectionKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void LpsDirectionDownCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (LpsDirectionUpCheck != null) LpsDirectionUpCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[LpsDirectionKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void UldDirectionUpCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (UldDirectionDownCheck != null) UldDirectionDownCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[UldDirectionKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void UldDirectionDownCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (UldDirectionUpCheck != null) UldDirectionUpCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[UldDirectionKey] = true; SaveConfig(c); } catch { }
+        }
+
+        #endregion
+
+        private void SaveLpsParams()
+        {
+            try
+            {
+                var cfg = LoadConfig();
+                var arr = new JArray(_lpsParams.Select(p =>
+                    new JObject(
+                        new JProperty("name",       p.Name),
+                        new JProperty("checked",    p.IsChecked),
+                        new JProperty("innerRange", p.UseInnerRange))));
+                cfg[LpsParamsKey] = arr;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void AddLpsParamRow(string name, bool isChecked, bool useInnerRange = false)
+        {
+            var entry = new LpsParamEntry { Name = name, IsChecked = isChecked, UseInnerRange = useInnerRange };
+            entry.PropertyChanged += (_, __) => SaveLpsParams();
+            _lpsParams.Add(entry);
+        }
+
+        #region Mode Toggle
+
+        private void ElModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (LpsModeCheck == null) return;
+            LpsModeCheck.IsChecked  = false;
+            UldModeCheck.IsChecked  = false;
+            ElPanel.Visibility  = Visibility.Visible;
+            LpsPanel.Visibility = Visibility.Collapsed;
+            UldPanel.Visibility = Visibility.Collapsed;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey] = false;
+                cfg[UldModeKey] = false;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void LpsModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElModeCheck == null) return;
+            ElModeCheck.IsChecked  = false;
+            UldModeCheck.IsChecked = false;
+            ElPanel.Visibility  = Visibility.Collapsed;
+            LpsPanel.Visibility = Visibility.Visible;
+            UldPanel.Visibility = Visibility.Collapsed;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey] = true;
+                cfg[UldModeKey] = false;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void UldModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElModeCheck == null) return;
+            ElModeCheck.IsChecked  = false;
+            LpsModeCheck.IsChecked = false;
+            ElPanel.Visibility  = Visibility.Collapsed;
+            LpsPanel.Visibility = Visibility.Collapsed;
+            UldPanel.Visibility = Visibility.Visible;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey] = false;
+                cfg[UldModeKey] = true;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        #endregion
+
+        #region LPS Param List
+
+        private void LpsAddParam_Click(object sender, RoutedEventArgs e)
+        {
+            AddLpsParamRow(string.Empty, isChecked: false, useInnerRange: false);
+            SaveLpsParams();
+        }
+
+        private void LpsRemoveParam_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as System.Windows.Controls.Button)?.Tag is LpsParamEntry entry)
+            {
+                _lpsParams.Remove(entry);
+                SaveLpsParams();
+            }
+        }
+
+        #endregion
+
+        #region LPS Select Button
+
+        private void LpsSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            var activeSpecs = _lpsParams
+                .Where(p => p.IsChecked && !string.IsNullOrWhiteSpace(p.Name))
+                .Select(p => new Services.Revit.LpsParamSpec(p.Name.Trim(), p.UseInnerRange))
+                .ToList();
+
+            if (activeSpecs.Count == 0)
+            {
+                LpsResultText.Text = "Please check at least one parameter row and enter its name.";
+                return;
+            }
+
+            string value = LpsValueBox.Text;
+
+            // Persist value
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsValueKey] = value;
+                SaveConfig(cfg);
+            }
+            catch { }
+
+            LpsResultText.Text        = string.Empty;
+            LpsSelectButton.IsEnabled = false;
+
+            this.Hide();
+
+            // Show the floating status window next to the main window
+            var statusWindow = new LpsStatusWindow();
+            statusWindow.UpdateStatus(activeSpecs.Select(s => (s.Name, value)), 0);
+            statusWindow.Show();
+            statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
+
+            var request = new Services.Revit.LpsParameterRequest(
+                activeSpecs,
+                value,
+                LpsDirectionDownCheck.IsChecked == true,
+                (result, nextValue) =>
+                {
+                    statusWindow.Close();
+
+                    this.Show();
+                    this.Activate();
+                    LpsResultText.Text        = result;
+                    LpsSelectButton.IsEnabled = true;
+
+                    if (nextValue != null)
+                    {
+                        LpsValueBox.Text = nextValue;
+                        try
+                        {
+                            var cfg = LoadConfig();
+                            cfg[LpsValueKey] = nextValue;
+                            SaveConfig(cfg);
+                        }
+                        catch { }
+                    }
+                },
+                onStatusUpdate: (paramValues, pickCount) =>
+                    statusWindow.UpdateStatus(paramValues, pickCount));
+
+            _externalEventService.Raise(request);
+        }
+
+        #endregion
+
+        #region Üld Mode
+
+        private void PopulateUldCategories()
+        {
+            var items = new[]
+            {
+                new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
+                new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
+                new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
+                new UldCategoryItem("Electrical Fixtures",       Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalFixtures),
+                new UldCategoryItem("Fire Alarm Devices",        Autodesk.Revit.DB.BuiltInCategory.OST_FireAlarmDevices),
+                new UldCategoryItem("Floors",                    Autodesk.Revit.DB.BuiltInCategory.OST_Floors),
+                new UldCategoryItem("Furniture",                 Autodesk.Revit.DB.BuiltInCategory.OST_Furniture),
+                new UldCategoryItem("Generic Models",            Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel),
+                new UldCategoryItem("Lighting Fixtures",         Autodesk.Revit.DB.BuiltInCategory.OST_LightingFixtures),
+                new UldCategoryItem("Mechanical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_MechanicalEquipment),
+                new UldCategoryItem("Pipes",                     Autodesk.Revit.DB.BuiltInCategory.OST_PipeCurves),
+                new UldCategoryItem("Rooms",                     Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),
+                new UldCategoryItem("Security Devices",          Autodesk.Revit.DB.BuiltInCategory.OST_SecurityDevices),
+                new UldCategoryItem("Structural Columns",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),
+                new UldCategoryItem("Structural Framing",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),
+                new UldCategoryItem("Walls",                     Autodesk.Revit.DB.BuiltInCategory.OST_Walls),
+                new UldCategoryItem("Windows",                   Autodesk.Revit.DB.BuiltInCategory.OST_Windows),
+            };
+            UldCategoryCombo.ItemsSource = items;
+            UldCategoryCombo.SelectedIndex = 0;
+        }
+
+        private void UldSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(UldCategoryCombo.SelectedItem is UldCategoryItem catItem))
+            {
+                UldResultText.Text = "Please select a category.";
+                return;
+            }
+
+            string paramName = UldParamNameBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(paramName))
+            {
+                UldResultText.Text = "Please enter a parameter name.";
+                return;
+            }
+
+            string value  = UldValueBox.Text;
+            string prefix = UldPrefixBox.Text;
+            string suffix = UldSuffixBox.Text;
+
+            // Persist state
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[UldCategoryKey]  = catItem.Label;
+                cfg[UldParamNameKey] = paramName;
+                cfg[UldValueKey]     = value;
+                cfg[UldPrefixKey]    = prefix;
+                cfg[UldSuffixKey]    = suffix;
+                SaveConfig(cfg);
+            }
+            catch { }
+
+            UldResultText.Text        = string.Empty;
+            UldSelectButton.IsEnabled = false;
+
+            this.Hide();
+
+            // Show floating status window
+            var statusWindow = new LpsStatusWindow();
+            statusWindow.UpdateStatus(new[] { (paramName, prefix + value + suffix) }, 0);
+            statusWindow.Show();
+            statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
+
+            var request = new Services.Revit.UldParameterRequest(
+                catItem.Category,
+                paramName,
+                value,
+                prefix,
+                suffix,
+                UldDirectionDownCheck.IsChecked == true,
+                (result, nextValue) =>
+                {
+                    statusWindow.Close();
+
+                    this.Show();
+                    this.Activate();
+                    UldResultText.Text        = result;
+                    UldSelectButton.IsEnabled = true;
+
+                    if (nextValue != null)
+                    {
+                        UldValueBox.Text = nextValue;
+                        try
+                        {
+                            var cfg = LoadConfig();
+                            cfg[UldValueKey] = nextValue;
+                            SaveConfig(cfg);
+                        }
+                        catch { }
+                    }
+                },
+                onStatusUpdate: (paramValues, pickCount) =>
+                    statusWindow.UpdateStatus(paramValues, pickCount));
+
+            _externalEventService.Raise(request);
+        }
+
+        #endregion
 
         #region Select Button
 
@@ -111,6 +560,7 @@ namespace Renumber.UI
             var request = new Services.Revit.SetCircuitParameterRequest(
                 paramName,
                 value,
+                ElDirectionDownCheck.IsChecked == true,
                 (result, nextValue) =>
                 {
                     // Execute() runs on Revit's main thread — safe to update WPF directly.
@@ -389,5 +839,37 @@ namespace Renumber.UI
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// Represents a single parameter row in the LPS parameters list.
+    /// </summary>
+    public sealed class LpsParamEntry : INotifyPropertyChanged
+    {
+        private string _name = string.Empty;
+        private bool _isChecked;
+        private bool _useInnerRange;
+
+        public string Name
+        {
+            get => _name;
+            set { if (_name != value) { _name = value; OnPropertyChanged(); } }
+        }
+
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set { if (_isChecked != value) { _isChecked = value; OnPropertyChanged(); } }
+        }
+
+        public bool UseInnerRange
+        {
+            get => _useInnerRange;
+            set { if (_useInnerRange != value) { _useInnerRange = value; OnPropertyChanged(); } }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
