@@ -1,0 +1,90 @@
+<UserControl x:Class="Renumber.UI.Controls.CircularGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="160" d:DesignWidth="160"
+             x:Name="GaugeRoot">
+
+    <!-- 
+        CircularGauge: A self-contained circular arc gauge control.
+        
+        Renders a 270-degree arc sweep (from 135 deg to 405 deg).
+        The progress arc is clipped to Value/MaxValue ratio.
+        Center text shows "Value / Max Unit" and a percentage below.
+        
+        Color transitions:
+          Normal  (ratio < WarningThreshold): green (#4CAF50)
+          Warning (ratio >= WarningThreshold and < ErrorThreshold): amber (#FFC107)  
+          Error   (ratio >= ErrorThreshold): red (#F44336)
+        
+        All geometry is recomputed in code-behind when Value or MaxValue changes.
+    -->
+
+    <UserControl.Resources>
+        <!-- Gauge-specific brushes. These are self-contained and do not 
+             modify any existing resource dictionaries in the template. -->
+        <SolidColorBrush x:Key="GaugeTrackBrush" Color="#44FFFFFF"/>
+        <SolidColorBrush x:Key="GaugeNormalBrush" Color="#4CAF50"/>
+        <SolidColorBrush x:Key="GaugeWarningBrush" Color="#FFC107"/>
+        <SolidColorBrush x:Key="GaugeErrorBrush" Color="#F44336"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Viewbox Stretch="Uniform">
+            <Canvas Width="160" Height="160">
+                <!-- Background arc (full 270-degree track) -->
+                <Path x:Name="TrackArc" 
+                      Stroke="{StaticResource GaugeTrackBrush}" 
+                      StrokeThickness="10" 
+                      StrokeStartLineCap="Round" 
+                      StrokeEndLineCap="Round"
+                      Fill="Transparent"/>
+
+                <!-- Progress arc (filled portion based on ratio) -->
+                <Path x:Name="ProgressArc" 
+                      StrokeThickness="10" 
+                      StrokeStartLineCap="Round" 
+                      StrokeEndLineCap="Round"
+                      Fill="Transparent"/>
+
+                <!-- Title text (above center) -->
+                <TextBlock x:Name="TitleText"
+                           Canvas.Left="80" Canvas.Top="48"
+                           FontSize="13" FontWeight="SemiBold"
+                           Foreground="#AAFFFFFF"
+                           TextAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TranslateTransform X="-40"/>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+
+                <!-- Value text (center) -->
+                <TextBlock x:Name="ValueText"
+                           Canvas.Left="80" Canvas.Top="64"
+                           FontSize="15" FontWeight="Bold"
+                           Foreground="#FFFFFF"
+                           TextAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TranslateTransform X="-50"/>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+
+                <!-- Percentage text (below center) -->
+                <TextBlock x:Name="PercentText"
+                           Canvas.Left="80" Canvas.Top="86"
+                           FontSize="12"
+                           Foreground="#88FFFFFF"
+                           TextAlignment="Center"
+                           RenderTransformOrigin="0.5,0.5">
+                    <TextBlock.RenderTransform>
+                        <TranslateTransform X="-25"/>
+                    </TextBlock.RenderTransform>
+                </TextBlock>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+</UserControl>

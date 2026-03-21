@@ -1,0 +1,40 @@
+## Visual Studio / .NET
+
+# Build output
+bin/
+obj/
+build_out.txt
+
+# Visual Studio user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# NuGet packages
+*.nupkg
+packages/
+!**/packages/build/
+
+# MSTest test results
+TestResults/
+[Tt]est[Rr]esult*/
+
+# Cached nuget
+*.nuget.props
+*.nuget.targets
+
+# Rider
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+crash.log
