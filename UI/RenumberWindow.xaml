@@ -8,10 +8,10 @@
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="Renumber"
-    Width="300"
-    Height="520"
+    Width="280"
+    Height="460"
     MinWidth="190"
-    MinHeight="380"
+    MinHeight="320"
     AllowsTransparency="True"
     Background="Transparent"
     WindowStyle="None"
@@ -105,7 +105,7 @@
                 </ToggleButton>
 
                 <!-- Main Form Content (Row 1) -->
-                <Grid Grid.Row="1" Margin="24,10,24,20">
+                <Grid Grid.Row="1" Margin="16,8,16,14">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />  <!-- Mode selector -->
                         <RowDefinition Height="10" />
@@ -154,7 +154,7 @@
                         <TextBlock Grid.Row="0"
                                    Text="Parameter Name"
                                    Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="13" FontWeight="SemiBold" />
+                                   FontSize="11" FontWeight="SemiBold" />
 
                         <TextBox Grid.Row="2"
                                  x:Name="ParameterNameBox"
@@ -169,7 +169,7 @@
                             <TextBlock Grid.Column="0"
                                        Text="Value"
                                        Foreground="{DynamicResource ForegroundBrush}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="11" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="ElDirectionUpCheck"
@@ -198,7 +198,7 @@
                                 Style="{StaticResource CustomActionButtonStyle}"
                                 Width="Auto"
                                 HorizontalAlignment="Stretch"
-                                Height="50" />
+                                Height="34" />
 
                         <ScrollViewer Grid.Row="10" VerticalScrollBarVisibility="Auto">
                             <TextBlock x:Name="ResultText"
@@ -237,7 +237,7 @@
                             <TextBlock Grid.Column="0"
                                        Text="Parameters"
                                        Foreground="{DynamicResource ForegroundBrush}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="11" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                             <Button Grid.Column="1"
                                     x:Name="LpsAddParamButton"
@@ -272,6 +272,9 @@
                                             <TextBox Grid.Column="1"
                                                      Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                      Style="{StaticResource CustomTextBoxStyle}"
+                                                     Width="90"
+                                                     HorizontalAlignment="Left"
+                                                     Margin="0,0,6,0"
                                                      VerticalAlignment="Center" />
                                             <!-- Value sequence checkbox (!UseInnerRange) -->
                                             <CheckBox Grid.Column="2"
@@ -280,7 +283,7 @@
                                                                   Converter={StaticResource InverseBoolConverter}}"
                                                       Style="{StaticResource CustomCheckboxStyleCompact}"
                                                       VerticalAlignment="Center"
-                                                      Margin="6,0,0,0" />
+                                                      Margin="0,0,0,0" />
                                             <!-- InnerRange sequence checkbox -->
                                             <CheckBox Grid.Column="3"
                                                       Content="IR"
@@ -313,7 +316,7 @@
                             <TextBlock Grid.Column="0"
                                        Text="Value"
                                        Foreground="{DynamicResource ForegroundBrush}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="11" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="LpsDirectionUpCheck"
@@ -344,7 +347,7 @@
                                 Style="{StaticResource CustomActionButtonStyle}"
                                 Width="Auto"
                                 HorizontalAlignment="Stretch"
-                                Height="50" />
+                                Height="34" />
 
                         <!-- Result text -->
                         <ScrollViewer Grid.Row="10" VerticalScrollBarVisibility="Auto">
@@ -385,7 +388,7 @@
                         <TextBlock Grid.Row="0"
                                    Text="Category"
                                    Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="13" FontWeight="SemiBold" />
+                                   FontSize="11" FontWeight="SemiBold" />
 
                         <!-- Category ComboBox -->
                         <ComboBox Grid.Row="2"
@@ -397,7 +400,7 @@
                         <TextBlock Grid.Row="4"
                                    Text="Parameter Name"
                                    Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="13" FontWeight="SemiBold" />
+                                   FontSize="11" FontWeight="SemiBold" />
 
                         <!-- Parameter Name TextBox -->
                         <TextBox Grid.Row="6"
@@ -414,7 +417,7 @@
                             <TextBlock Grid.Column="0"
                                        Text="Value"
                                        Foreground="{DynamicResource ForegroundBrush}"
-                                       FontSize="13" FontWeight="SemiBold"
+                                       FontSize="11" FontWeight="SemiBold"
                                        VerticalAlignment="Center" />
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <CheckBox x:Name="UldDirectionUpCheck"
@@ -447,8 +450,8 @@
                             <StackPanel Grid.Column="0">
                                 <TextBlock Text="Prefix"
                                            Foreground="{DynamicResource ForegroundBrush}"
-                                           FontSize="12" FontWeight="SemiBold"
-                                           Margin="0,0,0,4" />
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,0,0,3" />
                                 <TextBox x:Name="UldPrefixBox"
                                          Style="{StaticResource CustomTextBoxStyle}"
                                          HorizontalAlignment="Stretch" />
@@ -456,8 +459,8 @@
                             <StackPanel Grid.Column="2">
                                 <TextBlock Text="Suffix"
                                            Foreground="{DynamicResource ForegroundBrush}"
-                                           FontSize="12" FontWeight="SemiBold"
-                                           Margin="0,0,0,4" />
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,0,0,3" />
                                 <TextBox x:Name="UldSuffixBox"
                                          Style="{StaticResource CustomTextBoxStyle}"
                                          HorizontalAlignment="Stretch" />
@@ -472,7 +475,7 @@
                                 Style="{StaticResource CustomActionButtonStyle}"
                                 Width="Auto"
                                 HorizontalAlignment="Stretch"
-                                Height="50" />
+                                Height="34" />
 
                         <!-- Result text -->
                         <ScrollViewer Grid.Row="16" VerticalScrollBarVisibility="Auto">

@@ -43,20 +43,10 @@ namespace Renumber.UI
         /// <summary>Position the status window just to the right of the given window bounds.</summary>
         public void PositionNear(double ownerLeft, double ownerTop, double ownerWidth, double ownerHeight)
         {
-            // Prefer placing to the right; fall back to left if it would go off-screen
-            double screenW = SystemParameters.PrimaryScreenWidth;
-            double screenH = SystemParameters.PrimaryScreenHeight;
-
-            double preferredLeft = ownerLeft + ownerWidth + 10;
-            if (preferredLeft + Width > screenW)
-                preferredLeft = ownerLeft - Width - 10;
-
-            double preferredTop = ownerTop;
-            if (preferredTop + ActualHeight > screenH)
-                preferredTop = screenH - ActualHeight - 20;
-
-            Left = preferredLeft;
-            Top  = Math.Max(0, preferredTop);
+            // Width is explicit (240); height is SizeToContent so force layout first
+            UpdateLayout();
+            Left = ownerLeft + (ownerWidth  - Width)        / 2;
+            Top  = ownerTop  + (ownerHeight - ActualHeight) / 2;
         }
 
         /// <summary>

@@ -62,8 +62,20 @@ namespace Renumber
             ribbonPanel = application.CreateOrSelectPanel(tabName, "Tools");
 
             // Create PushButton with embedded resource
+            // Use the light image on dark Revit themes and the dark image on light themes
+            string iconName;
+            try
+            {
+                iconName = UIThemeManager.CurrentTheme == UITheme.Dark
+                    ? "Light%20-%20Renumber.tiff"
+                    : "Dark%20-%20Renumber.tiff";
+            }
+            catch
+            {
+                iconName = "Renumber.tiff";
+            }
             var duplicateSheetsButton = ribbonPanel.CreatePushButton<RenumberCommand>()
-                .SetLargeImage("pack://application:,,,/Renumber;component/Assets/Renumber.tiff")
+                .SetLargeImage($"pack://application:,,,/Renumber;component/Assets/{iconName}")
                 .SetText("Renumber")
                 .SetToolTip("Manage sheet duplication and batch renaming.")
                 .SetLongDescription("Renumber allows you to duplicate sheets in bulk, rename with find/replace, prefixes/suffixes, and preview changes before applying.");

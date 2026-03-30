@@ -66,6 +66,8 @@
 		</None>
         <EmbeddedResource Remove="Assets\Renumber.tiff" />
         <Resource Include="Assets\Renumber.tiff" />
+        <Resource Include="Assets\Dark - Renumber.tiff" />
+        <Resource Include="Assets\Light - Renumber.tiff" />
 	</ItemGroup>
 
 	<ItemGroup>

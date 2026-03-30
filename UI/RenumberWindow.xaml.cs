@@ -657,6 +657,7 @@ namespace Renumber.UI
             {
                 MessageBox.Show($"Error loading theme: {ex.Message}");
             }
+
         }
 
         private void ToggleTheme_Click(object sender, RoutedEventArgs e)
