@@ -32,29 +32,37 @@ namespace Renumber.Services.Revit
         private readonly IReadOnlyList<LpsParamSpec> _paramSpecs;
         private readonly string _startValue;
         private readonly bool _goDown;
+        private readonly bool _freeze;
         private readonly Action<string, string> _onComplete;
         /// <summary>
         /// Optional — called after each successful pick with (paramName, nextValue) pairs and the
         /// total pick count so far. Runs on the WPF/UI thread, safe to update UI directly.
         /// </summary>
         private readonly Action<IEnumerable<(string name, string value)>, int> _onStatusUpdate;
+        private readonly Action<Action<int>> _registerNudge;
 
         [DllImport("user32.dll")]
         private static extern short GetAsyncKeyState(int vKey);
         private const int VK_MENU = 0x12;
+        private const int VK_UP   = 0x26;
+        private const int VK_DOWN = 0x28;
 
         public LpsParameterRequest(
             IEnumerable<LpsParamSpec> paramSpecs,
             string startValue,
             bool goDown,
+            bool freeze,
             Action<string, string> onComplete,
-            Action<IEnumerable<(string name, string value)>, int> onStatusUpdate = null)
+            Action<IEnumerable<(string name, string value)>, int> onStatusUpdate = null,
+            Action<Action<int>> registerNudge = null)
         {
             _paramSpecs      = paramSpecs?.ToList() ?? throw new ArgumentNullException(nameof(paramSpecs));
             _startValue      = startValue;
             _goDown          = goDown;
+            _freeze          = freeze;
             _onComplete      = onComplete ?? throw new ArgumentNullException(nameof(onComplete));
             _onStatusUpdate  = onStatusUpdate;
+            _registerNudge   = registerNudge;
         }
 
         private sealed class ParamState
@@ -88,6 +96,17 @@ namespace Renumber.Services.Revit
 
             var pickLines = new List<string>();
             int totalWrites = 0;
+
+            // Register nudge handler — fires when user clicks ▲/▼ on the status window during picking
+            _registerNudge?.Invoke(delta =>
+            {
+                foreach (var st in states)
+                {
+                    if (int.TryParse(st.CurrentValue, out int sv))
+                        st.CurrentValue = (sv + delta).ToString();
+                }
+                _onStatusUpdate?.Invoke(states.Select(s => (s.Name, s.CurrentValue)), pickLines.Count);
+            });
 
             while (true)
             {
@@ -144,10 +163,23 @@ namespace Renumber.Services.Revit
                 if (errors.Count > 0) line += $"  ({string.Join("; ", errors)})";
                 pickLines.Add(line);
 
-                if (!altHeld)
+                if (!altHeld && !_freeze)
                 {
                     foreach (var st in states)
                         st.CurrentValue = Advance(st.CurrentValue, st.UseInnerRange, ref st.IrIndex, _goDown);
+                }
+
+                // Arrow-key nudge: ↑/↓ held at pick time adjusts the base value by ±1, independent of freeze
+                bool arrowUp   = (GetAsyncKeyState(VK_UP)   & 0x8000) != 0;
+                bool arrowDown = (GetAsyncKeyState(VK_DOWN) & 0x8000) != 0;
+                if (arrowUp || arrowDown)
+                {
+                    int delta = arrowUp ? 1 : -1;
+                    foreach (var st in states)
+                    {
+                        if (int.TryParse(st.CurrentValue, out int sv))
+                            st.CurrentValue = (sv + delta).ToString();
+                    }
                 }
 
                 // Notify status window with the upcoming values and total pick count so far

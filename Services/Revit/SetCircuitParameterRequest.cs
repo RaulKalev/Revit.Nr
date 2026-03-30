@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Renumber.Services.Revit
@@ -19,13 +20,20 @@ namespace Renumber.Services.Revit
         private readonly string _parameterName;
         private readonly string _value;
         private readonly bool _goDown;
+        private readonly bool _freeze;
         private readonly Action<string, string> _onComplete;
 
-        public SetCircuitParameterRequest(string parameterName, string value, bool goDown, Action<string, string> onComplete)
+        [DllImport("user32.dll")]
+        private static extern short GetAsyncKeyState(int vKey);
+        private const int VK_UP   = 0x26;
+        private const int VK_DOWN = 0x28;
+
+        public SetCircuitParameterRequest(string parameterName, string value, bool goDown, bool freeze, Action<string, string> onComplete)
         {
             _parameterName = parameterName;
             _value = value;
             _goDown = goDown;
+            _freeze = freeze;
             _onComplete = onComplete;
         }
 
@@ -120,8 +128,14 @@ namespace Renumber.Services.Revit
                 pickLines.Add(line);
 
                 // Advance value for the next pick
-                if (int.TryParse(currentValue, out int iv))
+                if (!_freeze && int.TryParse(currentValue, out int iv))
                     currentValue = (iv + (_goDown ? -1 : 1)).ToString();
+
+                // Arrow-key nudge: ↑/↓ held at pick time adjusts by ±1, independent of freeze
+                if ((GetAsyncKeyState(VK_UP) & 0x8000) != 0 && int.TryParse(currentValue, out int upVal))
+                    currentValue = (upVal + 1).ToString();
+                else if ((GetAsyncKeyState(VK_DOWN) & 0x8000) != 0 && int.TryParse(currentValue, out int dnVal))
+                    currentValue = (dnVal - 1).ToString();
             }
 
             // next value to show in the box after the session ends

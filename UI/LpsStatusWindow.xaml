@@ -76,9 +76,32 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!-- Alt hint -->
+            <!-- Nudge buttons + Alt hint -->
             <Rectangle Height="1" Fill="#FF383838" Margin="0,8,0,6" />
-            <TextBlock Text="Alt = hold numbers"
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="6" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0"
+                        x:Name="NudgeUpButton"
+                        Content="▲"
+                        Click="NudgeUp_Click"
+                        Height="26" FontSize="13"
+                        Background="#FF333333" Foreground="White"
+                        BorderBrush="#FF555555" BorderThickness="1"
+                        Cursor="Hand" />
+                <Button Grid.Column="2"
+                        x:Name="NudgeDownButton"
+                        Content="▼"
+                        Click="NudgeDown_Click"
+                        Height="26" FontSize="13"
+                        Background="#FF333333" Foreground="White"
+                        BorderBrush="#FF555555" BorderThickness="1"
+                        Cursor="Hand" />
+            </Grid>
+            <TextBlock Text="Alt = hold  •  ▲/▼ = adjust value"
                        Foreground="#FFFFFFFF"
                        FontSize="10"
                        HorizontalAlignment="Center" />

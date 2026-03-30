@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net48;net8.0-windows</TargetFrameworks>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
 
     <AssemblyName>Renumber</AssemblyName>
     <RootNamespace>Renumber</RootNamespace>

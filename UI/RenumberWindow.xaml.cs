@@ -41,6 +41,10 @@ namespace Renumber.UI
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
         private const string UldDirectionKey    = "RenumberWindow.UldDirection";
+        // Freeze config keys
+        private const string ElFreezeKey        = "RenumberWindow.ElFreeze";
+        private const string LpsFreezeKey       = "RenumberWindow.LpsFreeze";
+        private const string UldFreezeKey       = "RenumberWindow.UldFreeze";
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -62,8 +66,9 @@ namespace Renumber.UI
         {
             public string Label { get; }
             public Autodesk.Revit.DB.BuiltInCategory Category { get; }
-            public UldCategoryItem(string label, Autodesk.Revit.DB.BuiltInCategory cat)
-            { Label = label; Category = cat; }
+            public bool IsTextNote { get; }
+            public UldCategoryItem(string label, Autodesk.Revit.DB.BuiltInCategory cat, bool isTextNote = false)
+            { Label = label; Category = cat; IsTextNote = isTextNote; }
             public override string ToString() => Label;
         }
 
@@ -203,6 +208,10 @@ namespace Renumber.UI
                 { LpsDirectionUpCheck.IsChecked = false; LpsDirectionDownCheck.IsChecked = true; }
                 if (TryGetBool(config, UldDirectionKey, out bool uldDown) && uldDown)
                 { UldDirectionUpCheck.IsChecked = false; UldDirectionDownCheck.IsChecked = true; }
+                // Freeze state
+                if (TryGetBool(config, ElFreezeKey,  out bool elFreeze)  && elFreeze)  ElFreezeCheck.IsChecked  = true;
+                if (TryGetBool(config, LpsFreezeKey, out bool lpsFreeze) && lpsFreeze) LpsFreezeCheck.IsChecked = true;
+                if (TryGetBool(config, UldFreezeKey, out bool uldFreeze) && uldFreeze) UldFreezeCheck.IsChecked = true;
             }
             catch { }
         }
@@ -247,6 +256,21 @@ namespace Renumber.UI
             if (UldDirectionUpCheck != null) UldDirectionUpCheck.IsChecked = false;
             try { var c = LoadConfig(); c[UldDirectionKey] = true; SaveConfig(c); } catch { }
         }
+
+        private void ElFreezeCheck_Checked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[ElFreezeKey]  = true;  SaveConfig(c); } catch { } }
+        private void ElFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[ElFreezeKey]  = false; SaveConfig(c); } catch { } }
+
+        private void LpsFreezeCheck_Checked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[LpsFreezeKey] = true;  SaveConfig(c); } catch { } }
+        private void LpsFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[LpsFreezeKey] = false; SaveConfig(c); } catch { } }
+
+        private void UldFreezeCheck_Checked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[UldFreezeKey] = true;  SaveConfig(c); } catch { } }
+        private void UldFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[UldFreezeKey] = false; SaveConfig(c); } catch { } }
 
         #endregion
 
@@ -391,6 +415,7 @@ namespace Renumber.UI
                 activeSpecs,
                 value,
                 LpsDirectionDownCheck.IsChecked == true,
+                LpsFreezeCheck.IsChecked == true,
                 (result, nextValue) =>
                 {
                     statusWindow.Close();
@@ -413,7 +438,8 @@ namespace Renumber.UI
                     }
                 },
                 onStatusUpdate: (paramValues, pickCount) =>
-                    statusWindow.UpdateStatus(paramValues, pickCount));
+                    statusWindow.UpdateStatus(paramValues, pickCount),
+                registerNudge: handler => statusWindow.NudgeRequested = handler);
 
             _externalEventService.Raise(request);
         }
@@ -428,6 +454,7 @@ namespace Renumber.UI
             {
                 new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
                 new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Detail Items",               Autodesk.Revit.DB.BuiltInCategory.OST_DetailComponents),
                 new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
                 new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
                 new UldCategoryItem("Electrical Fixtures",       Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalFixtures),
@@ -442,11 +469,21 @@ namespace Renumber.UI
                 new UldCategoryItem("Security Devices",          Autodesk.Revit.DB.BuiltInCategory.OST_SecurityDevices),
                 new UldCategoryItem("Structural Columns",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),
                 new UldCategoryItem("Structural Framing",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),
+                new UldCategoryItem("Text Notes",                 Autodesk.Revit.DB.BuiltInCategory.OST_TextNotes,          isTextNote: true),
                 new UldCategoryItem("Walls",                     Autodesk.Revit.DB.BuiltInCategory.OST_Walls),
                 new UldCategoryItem("Windows",                   Autodesk.Revit.DB.BuiltInCategory.OST_Windows),
             };
             UldCategoryCombo.ItemsSource = items;
             UldCategoryCombo.SelectedIndex = 0;
+        }
+
+        private void UldCategoryCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!_isDataLoaded) return;
+            bool isTextNote = (UldCategoryCombo.SelectedItem as UldCategoryItem)?.IsTextNote == true;
+            var vis = isTextNote ? Visibility.Collapsed : Visibility.Visible;
+            UldParamNameLabel.Visibility = vis;
+            UldParamNameBox.Visibility   = vis;
         }
 
         private void UldSelectButton_Click(object sender, RoutedEventArgs e)
@@ -457,11 +494,16 @@ namespace Renumber.UI
                 return;
             }
 
-            string paramName = UldParamNameBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(paramName))
+            bool isTextNote = catItem.IsTextNote;
+            string paramName = null;
+            if (!isTextNote)
             {
-                UldResultText.Text = "Please enter a parameter name.";
-                return;
+                paramName = UldParamNameBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(paramName))
+                {
+                    UldResultText.Text = "Please enter a parameter name.";
+                    return;
+                }
             }
 
             string value  = UldValueBox.Text;
@@ -473,7 +515,7 @@ namespace Renumber.UI
             {
                 var cfg = LoadConfig();
                 cfg[UldCategoryKey]  = catItem.Label;
-                cfg[UldParamNameKey] = paramName;
+                cfg[UldParamNameKey] = paramName ?? string.Empty;
                 cfg[UldValueKey]     = value;
                 cfg[UldPrefixKey]    = prefix;
                 cfg[UldSuffixKey]    = suffix;
@@ -487,8 +529,9 @@ namespace Renumber.UI
             this.Hide();
 
             // Show floating status window
+            string statusLabel = isTextNote ? "Text" : paramName;
             var statusWindow = new LpsStatusWindow();
-            statusWindow.UpdateStatus(new[] { (paramName, prefix + value + suffix) }, 0);
+            statusWindow.UpdateStatus(new[] { (statusLabel, prefix + value + suffix) }, 0);
             statusWindow.Show();
             statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
 
@@ -499,6 +542,7 @@ namespace Renumber.UI
                 prefix,
                 suffix,
                 UldDirectionDownCheck.IsChecked == true,
+                UldFreezeCheck.IsChecked == true,
                 (result, nextValue) =>
                 {
                     statusWindow.Close();
@@ -521,7 +565,8 @@ namespace Renumber.UI
                     }
                 },
                 onStatusUpdate: (paramValues, pickCount) =>
-                    statusWindow.UpdateStatus(paramValues, pickCount));
+                    statusWindow.UpdateStatus(paramValues, pickCount),
+                registerNudge: handler => statusWindow.NudgeRequested = handler);
 
             _externalEventService.Raise(request);
         }
@@ -561,6 +606,7 @@ namespace Renumber.UI
                 paramName,
                 value,
                 ElDirectionDownCheck.IsChecked == true,
+                ElFreezeCheck.IsChecked == true,
                 (result, nextValue) =>
                 {
                     // Execute() runs on Revit's main thread — safe to update WPF directly.

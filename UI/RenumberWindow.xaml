@@ -182,7 +182,15 @@
                                           Content="↓"
                                           IsChecked="False"
                                           Checked="ElDirectionDownCheck_Checked"
-                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="ElFreezeCheck"
+                                          Content="="
+                                          IsChecked="False"
+                                          Checked="ElFreezeCheck_Checked"
+                                          Unchecked="ElFreezeCheck_Unchecked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          ToolTip="Freeze: apply the same value to every pick without incrementing" />
                             </StackPanel>
                         </Grid>
 
@@ -329,7 +337,15 @@
                                           Content="↓"
                                           IsChecked="False"
                                           Checked="LpsDirectionDownCheck_Checked"
-                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="LpsFreezeCheck"
+                                          Content="="
+                                          IsChecked="False"
+                                          Checked="LpsFreezeCheck_Checked"
+                                          Unchecked="LpsFreezeCheck_Unchecked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          ToolTip="Freeze: apply the same value to every pick without incrementing" />
                             </StackPanel>
                         </Grid>
 
@@ -394,10 +410,12 @@
                         <ComboBox Grid.Row="2"
                                   x:Name="UldCategoryCombo"
                                   Style="{StaticResource DarkThemeComboBox}"
+                                  SelectionChanged="UldCategoryCombo_SelectionChanged"
                                   HorizontalAlignment="Stretch" />
 
                         <!-- Parameter Name label -->
                         <TextBlock Grid.Row="4"
+                                   x:Name="UldParamNameLabel"
                                    Text="Parameter Name"
                                    Foreground="{DynamicResource ForegroundBrush}"
                                    FontSize="11" FontWeight="SemiBold" />
@@ -430,7 +448,15 @@
                                           Content="↓"
                                           IsChecked="False"
                                           Checked="UldDirectionDownCheck_Checked"
-                                          Style="{StaticResource CustomCheckboxStyleCompact}" />
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="UldFreezeCheck"
+                                          Content="="
+                                          IsChecked="False"
+                                          Checked="UldFreezeCheck_Checked"
+                                          Unchecked="UldFreezeCheck_Unchecked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          ToolTip="Freeze: apply the same value to every pick without incrementing" />
                             </StackPanel>
                         </Grid>
 

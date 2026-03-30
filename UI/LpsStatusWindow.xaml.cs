@@ -77,5 +77,14 @@ namespace Renumber.UI
             if (e.ButtonState == MouseButtonState.Pressed)
                 DragMove();
         }
+
+        /// <summary>
+        /// Set this from inside Execute() to receive nudge deltas (+1 or -1) when the user
+        /// clicks the ▲/▼ buttons during an active pick session.
+        /// </summary>
+        public Action<int> NudgeRequested;
+
+        private void NudgeUp_Click(object sender, RoutedEventArgs e)   => NudgeRequested?.Invoke(+1);
+        private void NudgeDown_Click(object sender, RoutedEventArgs e) => NudgeRequested?.Invoke(-1);
     }
 }
