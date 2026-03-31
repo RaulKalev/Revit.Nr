@@ -84,6 +84,19 @@ namespace Renumber.UI.ViewModels
             }
         }
 
+        public bool IsDataDevicesSelected
+        {
+            get => Settings.IncludedCategories.Contains(BuiltInCategory.OST_DataDevices);
+            set
+            {
+                if (value && !Settings.IncludedCategories.Contains(BuiltInCategory.OST_DataDevices))
+                    Settings.IncludedCategories.Add(BuiltInCategory.OST_DataDevices);
+                else if (!value)
+                    Settings.IncludedCategories.Remove(BuiltInCategory.OST_DataDevices);
+                OnPropertyChanged();
+            }
+        }
+
         // --- Numeric limit helpers (TextBox can't bind directly to double/int without a converter) ---
 
         // --- Numeric limit helpers (TextBox can't bind directly to double/int without a converter) ---

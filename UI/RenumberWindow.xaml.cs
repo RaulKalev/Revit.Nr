@@ -37,6 +37,12 @@ namespace Renumber.UI
         private const string UldValueKey        = "RenumberWindow.UldValue";
         private const string UldPrefixKey       = "RenumberWindow.UldPrefix";
         private const string UldSuffixKey       = "RenumberWindow.UldSuffix";
+        // Heli config keys
+        private const string HeliModeKey        = "RenumberWindow.HeliMode";
+        private const string HeliCategoryKey    = "RenumberWindow.HeliCategory";
+        private const string HeliParamNameKey   = "RenumberWindow.HeliParamName";
+        private const string HeliValue1Key      = "RenumberWindow.HeliValue1";
+        private const string HeliValue2Key      = "RenumberWindow.HeliValue2";
         // Direction config keys
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
@@ -108,6 +114,20 @@ namespace Renumber.UI
                     if (item is UldCategoryItem ci && ci.Label == _pendingUldCategory)
                     {
                         UldCategoryCombo.SelectedItem = ci;
+                        break;
+                    }
+                }
+            }
+
+            // Populate Heli category dropdown, then restore saved selection
+            PopulateHeliCategories();
+            if (_pendingHeliCategory != null)
+            {
+                foreach (var item in HeliCategoryCombo.Items)
+                {
+                    if (item is UldCategoryItem ci && ci.Label == _pendingHeliCategory)
+                    {
+                        HeliCategoryCombo.SelectedItem = ci;
                         break;
                     }
                 }
@@ -201,6 +221,32 @@ namespace Renumber.UI
                     _pendingUldCategory = ucl;
                 }
 
+                // Heli mode flag
+                if (TryGetBool(config, HeliModeKey, out bool isHeli) && isHeli)
+                {
+                    ElModeCheck.IsChecked   = false;
+                    LpsModeCheck.IsChecked  = false;
+                    UldModeCheck.IsChecked  = false;
+                    HeliModeCheck.IsChecked = true;
+                    ElPanel.Visibility   = Visibility.Collapsed;
+                    LpsPanel.Visibility  = Visibility.Collapsed;
+                    UldPanel.Visibility  = Visibility.Collapsed;
+                    HeliPanel.Visibility = Visibility.Visible;
+                }
+
+                // Heli field values (restored after category dropdown is populated)
+                if (config.TryGetValue(HeliParamNameKey, out var rawHeliParam) && rawHeliParam is string hpn)
+                    HeliParamNameBox.Text = hpn;
+                if (config.TryGetValue(HeliValue1Key, out var rawHeliV1) && rawHeliV1 is string hv1)
+                    HeliValue1Box.Text = hv1;
+                if (config.TryGetValue(HeliValue2Key, out var rawHeliV2) && rawHeliV2 is string hv2)
+                    HeliValue2Box.Text = hv2;
+                if (config.TryGetValue(HeliCategoryKey, out var rawHeliCat) && rawHeliCat is string hcl)
+                {
+                    // Match by label — items not populated yet; defer to Loaded
+                    _pendingHeliCategory = hcl;
+                }
+
                 // Direction state
                 if (TryGetBool(config, ElDirectionKey, out bool elDown) && elDown)
                 { ElDirectionUpCheck.IsChecked = false; ElDirectionDownCheck.IsChecked = true; }
@@ -218,6 +264,8 @@ namespace Renumber.UI
 
         // Saved category label to restore after PopulateUldCategories runs
         private string _pendingUldCategory;
+        // Saved category label to restore after PopulateHeliCategories runs
+        private string _pendingHeliCategory;
 
         #region Direction Toggle Handlers
 
@@ -304,14 +352,17 @@ namespace Renumber.UI
             if (LpsModeCheck == null) return;
             LpsModeCheck.IsChecked  = false;
             UldModeCheck.IsChecked  = false;
-            ElPanel.Visibility  = Visibility.Visible;
-            LpsPanel.Visibility = Visibility.Collapsed;
-            UldPanel.Visibility = Visibility.Collapsed;
+            HeliModeCheck.IsChecked = false;
+            ElPanel.Visibility   = Visibility.Visible;
+            LpsPanel.Visibility  = Visibility.Collapsed;
+            UldPanel.Visibility  = Visibility.Collapsed;
+            HeliPanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
-                cfg[LpsModeKey] = false;
-                cfg[UldModeKey] = false;
+                cfg[LpsModeKey]  = false;
+                cfg[UldModeKey]  = false;
+                cfg[HeliModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -320,16 +371,19 @@ namespace Renumber.UI
         private void LpsModeCheck_Checked(object sender, RoutedEventArgs e)
         {
             if (ElModeCheck == null) return;
-            ElModeCheck.IsChecked  = false;
-            UldModeCheck.IsChecked = false;
-            ElPanel.Visibility  = Visibility.Collapsed;
-            LpsPanel.Visibility = Visibility.Visible;
-            UldPanel.Visibility = Visibility.Collapsed;
+            ElModeCheck.IsChecked   = false;
+            UldModeCheck.IsChecked  = false;
+            HeliModeCheck.IsChecked = false;
+            ElPanel.Visibility   = Visibility.Collapsed;
+            LpsPanel.Visibility  = Visibility.Visible;
+            UldPanel.Visibility  = Visibility.Collapsed;
+            HeliPanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
-                cfg[LpsModeKey] = true;
-                cfg[UldModeKey] = false;
+                cfg[LpsModeKey]  = true;
+                cfg[UldModeKey]  = false;
+                cfg[HeliModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -338,16 +392,40 @@ namespace Renumber.UI
         private void UldModeCheck_Checked(object sender, RoutedEventArgs e)
         {
             if (ElModeCheck == null) return;
-            ElModeCheck.IsChecked  = false;
-            LpsModeCheck.IsChecked = false;
-            ElPanel.Visibility  = Visibility.Collapsed;
-            LpsPanel.Visibility = Visibility.Collapsed;
-            UldPanel.Visibility = Visibility.Visible;
+            ElModeCheck.IsChecked   = false;
+            LpsModeCheck.IsChecked  = false;
+            HeliModeCheck.IsChecked = false;
+            ElPanel.Visibility   = Visibility.Collapsed;
+            LpsPanel.Visibility  = Visibility.Collapsed;
+            UldPanel.Visibility  = Visibility.Visible;
+            HeliPanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
-                cfg[LpsModeKey] = false;
-                cfg[UldModeKey] = true;
+                cfg[LpsModeKey]  = false;
+                cfg[UldModeKey]  = true;
+                cfg[HeliModeKey] = false;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void HeliModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElModeCheck == null) return;
+            ElModeCheck.IsChecked  = false;
+            LpsModeCheck.IsChecked = false;
+            UldModeCheck.IsChecked = false;
+            ElPanel.Visibility   = Visibility.Collapsed;
+            LpsPanel.Visibility  = Visibility.Collapsed;
+            UldPanel.Visibility  = Visibility.Collapsed;
+            HeliPanel.Visibility = Visibility.Visible;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey]  = false;
+                cfg[UldModeKey]  = false;
+                cfg[HeliModeKey] = true;
                 SaveConfig(cfg);
             }
             catch { }
@@ -454,6 +532,7 @@ namespace Renumber.UI
             {
                 new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
                 new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Data Devices",              Autodesk.Revit.DB.BuiltInCategory.OST_DataDevices),
                 new UldCategoryItem("Detail Items",               Autodesk.Revit.DB.BuiltInCategory.OST_DetailComponents),
                 new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
                 new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
@@ -567,6 +646,114 @@ namespace Renumber.UI
                 onStatusUpdate: (paramValues, pickCount) =>
                     statusWindow.UpdateStatus(paramValues, pickCount),
                 registerNudge: handler => statusWindow.NudgeRequested = handler);
+
+            _externalEventService.Raise(request);
+        }
+
+        #endregion
+
+        #region Heli Mode
+
+        private void PopulateHeliCategories()
+        {
+            var items = new[]
+            {
+                new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
+                new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Data Devices",              Autodesk.Revit.DB.BuiltInCategory.OST_DataDevices),
+                new UldCategoryItem("Detail Items",               Autodesk.Revit.DB.BuiltInCategory.OST_DetailComponents),
+                new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
+                new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
+                new UldCategoryItem("Electrical Fixtures",       Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalFixtures),
+                new UldCategoryItem("Fire Alarm Devices",        Autodesk.Revit.DB.BuiltInCategory.OST_FireAlarmDevices),
+                new UldCategoryItem("Floors",                    Autodesk.Revit.DB.BuiltInCategory.OST_Floors),
+                new UldCategoryItem("Furniture",                 Autodesk.Revit.DB.BuiltInCategory.OST_Furniture),
+                new UldCategoryItem("Generic Models",            Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel),
+                new UldCategoryItem("Lighting Fixtures",         Autodesk.Revit.DB.BuiltInCategory.OST_LightingFixtures),
+                new UldCategoryItem("Mechanical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_MechanicalEquipment),
+                new UldCategoryItem("Pipes",                     Autodesk.Revit.DB.BuiltInCategory.OST_PipeCurves),
+                new UldCategoryItem("Rooms",                     Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),
+                new UldCategoryItem("Security Devices",          Autodesk.Revit.DB.BuiltInCategory.OST_SecurityDevices),
+                new UldCategoryItem("Structural Columns",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),
+                new UldCategoryItem("Structural Framing",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),
+                new UldCategoryItem("Walls",                     Autodesk.Revit.DB.BuiltInCategory.OST_Walls),
+                new UldCategoryItem("Windows",                   Autodesk.Revit.DB.BuiltInCategory.OST_Windows),
+            };
+            HeliCategoryCombo.ItemsSource = items;
+            HeliCategoryCombo.SelectedIndex = 0;
+        }
+
+        private void HeliCategoryCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!_isDataLoaded) return;
+            if (HeliCategoryCombo.SelectedItem is UldCategoryItem catItem)
+            {
+                try
+                {
+                    var cfg = LoadConfig();
+                    cfg[HeliCategoryKey] = catItem.Label;
+                    SaveConfig(cfg);
+                }
+                catch { }
+            }
+        }
+
+        private void HeliSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(HeliCategoryCombo.SelectedItem is UldCategoryItem catItem))
+            {
+                HeliResultText.Text = "Please select a category.";
+                return;
+            }
+
+            string paramName = HeliParamNameBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(paramName))
+            {
+                HeliResultText.Text = "Please enter a parameter name.";
+                return;
+            }
+
+            string value1 = HeliValue1Box.Text;
+            string value2 = HeliValue2Box.Text;
+
+            // Persist state
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[HeliCategoryKey]  = catItem.Label;
+                cfg[HeliParamNameKey] = paramName;
+                cfg[HeliValue1Key]    = value1;
+                cfg[HeliValue2Key]    = value2;
+                SaveConfig(cfg);
+            }
+            catch { }
+
+            HeliResultText.Text        = string.Empty;
+            HeliSelectButton.IsEnabled = false;
+
+            this.Hide();
+
+            var statusWindow = new LpsStatusWindow();
+            statusWindow.UpdateStatus(new[] { (paramName, value1) }, 0);
+            statusWindow.Show();
+            statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
+
+            var request = new Services.Revit.HeliParameterRequest(
+                catItem.Category,
+                paramName,
+                value1,
+                value2,
+                result =>
+                {
+                    statusWindow.Close();
+
+                    this.Show();
+                    this.Activate();
+                    HeliResultText.Text        = result;
+                    HeliSelectButton.IsEnabled = true;
+                },
+                onStatusUpdate: (paramValues, pickCount) =>
+                    statusWindow.UpdateStatus(paramValues, pickCount));
 
             _externalEventService.Raise(request);
         }

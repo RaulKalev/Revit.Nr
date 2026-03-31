@@ -130,6 +130,12 @@
                                   Content="Üld"
                                   IsChecked="False"
                                   Checked="UldModeCheck_Checked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  Margin="0,0,20,0" />
+                        <CheckBox x:Name="HeliModeCheck"
+                                  Content="Heli"
+                                  IsChecked="False"
+                                  Checked="HeliModeCheck_Checked"
                                   Style="{StaticResource CustomCheckboxStyleCompact}" />
                     </StackPanel>
 
@@ -506,6 +512,102 @@
                         <!-- Result text -->
                         <ScrollViewer Grid.Row="16" VerticalScrollBarVisibility="Auto">
                             <TextBlock x:Name="UldResultText"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"
+                                       Opacity="0.85" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- ============================================================
+                         Heli Panel (alternating value write)
+                    ============================================================ -->
+                    <Grid x:Name="HeliPanel" Grid.Row="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />  <!-- Category label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Category ComboBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name TextBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Value 1 label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value 1 TextBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Value 2 label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value 2 TextBox -->
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />  <!-- Select button -->
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />     <!-- Result text -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Category label -->
+                        <TextBlock Grid.Row="0"
+                                   Text="Category"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Category ComboBox -->
+                        <ComboBox Grid.Row="2"
+                                  x:Name="HeliCategoryCombo"
+                                  Style="{StaticResource DarkThemeComboBox}"
+                                  SelectionChanged="HeliCategoryCombo_SelectionChanged"
+                                  HorizontalAlignment="Stretch" />
+
+                        <!-- Parameter Name label -->
+                        <TextBlock Grid.Row="4"
+                                   Text="Parameter Name"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Parameter Name TextBox -->
+                        <TextBox Grid.Row="6"
+                                 x:Name="HeliParamNameBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Value 1 label -->
+                        <TextBlock Grid.Row="8"
+                                   Text="Value 1"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Value 1 TextBox -->
+                        <TextBox Grid.Row="10"
+                                 x:Name="HeliValue1Box"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Value 2 label -->
+                        <TextBlock Grid.Row="12"
+                                   Text="Value 2"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Value 2 TextBox -->
+                        <TextBox Grid.Row="14"
+                                 x:Name="HeliValue2Box"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Select button -->
+                        <Button Grid.Row="16"
+                                x:Name="HeliSelectButton"
+                                Content="Select Elements"
+                                Click="HeliSelectButton_Click"
+                                Style="{StaticResource CustomActionButtonStyle}"
+                                Width="Auto"
+                                HorizontalAlignment="Stretch"
+                                Height="34" />
+
+                        <!-- Result text -->
+                        <ScrollViewer Grid.Row="18" VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="HeliResultText"
                                        Foreground="{DynamicResource ForegroundBrush}"
                                        FontSize="12"
                                        TextWrapping="Wrap"

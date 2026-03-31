@@ -89,17 +89,61 @@
                         Content="▲"
                         Click="NudgeUp_Click"
                         Height="26" FontSize="13"
-                        Background="#FF333333" Foreground="White"
-                        BorderBrush="#FF555555" BorderThickness="1"
-                        Cursor="Hand" />
+                        Foreground="White"
+                        BorderThickness="1"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="#FF222222"
+                                    BorderBrush="#FF555555"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#70babc" />
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#70babc" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#5aa0a2" />
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#FF555555" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
                 <Button Grid.Column="2"
                         x:Name="NudgeDownButton"
                         Content="▼"
                         Click="NudgeDown_Click"
                         Height="26" FontSize="13"
-                        Background="#FF333333" Foreground="White"
-                        BorderBrush="#FF555555" BorderThickness="1"
-                        Cursor="Hand" />
+                        Foreground="White"
+                        BorderThickness="1"
+                        Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="#FF222222"
+                                    BorderBrush="#FF555555"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="5">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#70babc" />
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#70babc" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#5aa0a2" />
+                                    <Setter TargetName="Bd" Property="BorderBrush" Value="#FF555555" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </Grid>
             <TextBlock Text="Alt = hold  •  ▲/▼ = adjust value"
                        Foreground="#FFFFFFFF"

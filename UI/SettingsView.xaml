@@ -26,6 +26,7 @@
                         <CheckBox Content="Lighting Fixtures" IsChecked="{Binding IsLightingFixturesSelected}" Foreground="{DynamicResource ForegroundBrush}" Margin="0,2"/>
                         <CheckBox Content="Electrical Fixtures" IsChecked="{Binding IsElectricalFixturesSelected}" Foreground="{DynamicResource ForegroundBrush}" Margin="0,2"/>
                         <CheckBox Content="Lighting Devices" IsChecked="{Binding IsLightingDevicesSelected}" Foreground="{DynamicResource ForegroundBrush}" Margin="0,2"/>
+                        <CheckBox Content="Data Devices" IsChecked="{Binding IsDataDevicesSelected}" Foreground="{DynamicResource ForegroundBrush}" Margin="0,2"/>
                     </StackPanel>
                 </Border>
 
