@@ -645,13 +645,9 @@
                             <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />  <!-- Prefix / Suffix row -->
                             <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 label -->
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 toggle -->
                             <RowDefinition Height="6" />
-                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 TextBox -->
-                            <RowDefinition Height="8" />
-                            <RowDefinition Height="Auto" />  <!-- Fixed Value label -->
-                            <RowDefinition Height="6" />
-                            <RowDefinition Height="Auto" />  <!-- Fixed Value TextBox -->
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 + Fixed Value panel -->
                             <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />  <!-- Select button -->
                             <RowDefinition Height="10" />
@@ -765,34 +761,35 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Parameter Name 2 label -->
-                        <TextBlock Grid.Row="18"
-                                   Text="Parameter Name 2 (optional)"
-                                   Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   ToolTip="A second parameter written with a fixed value on every pick." />
+                        <!-- Parameter Name 2 toggle header -->
+                        <CheckBox Grid.Row="18"
+                                  x:Name="AtsParam2EnabledCheck"
+                                  Content="Parameter Name 2"
+                                  IsChecked="False"
+                                  Checked="AtsParam2EnabledCheck_Checked"
+                                  Unchecked="AtsParam2EnabledCheck_Unchecked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  ToolTip="Enable a second parameter written with a fixed value on every pick." />
 
-                        <!-- Parameter Name 2 TextBox -->
-                        <TextBox Grid.Row="20"
-                                 x:Name="AtsParamName2Box"
-                                 Style="{StaticResource CustomTextBoxStyle}"
-                                 HorizontalAlignment="Stretch" />
-
-                        <!-- Fixed Value label -->
-                        <TextBlock Grid.Row="22"
-                                   Text="Fixed Value"
-                                   Foreground="{DynamicResource ForegroundBrush}"
-                                   FontSize="11" FontWeight="SemiBold"
-                                   ToolTip="Value written to Parameter Name 2 on every pick (does not increment)." />
-
-                        <!-- Fixed Value TextBox -->
-                        <TextBox Grid.Row="24"
-                                 x:Name="AtsFixedValueBox"
-                                 Style="{StaticResource CustomTextBoxStyle}"
-                                 HorizontalAlignment="Stretch" />
+                        <!-- Parameter Name 2 + Fixed Value fields (collapsed when toggle is off) -->
+                        <StackPanel Grid.Row="20"
+                                    x:Name="AtsParam2Panel"
+                                    Visibility="Collapsed">
+                            <TextBox x:Name="AtsParamName2Box"
+                                     Style="{StaticResource CustomTextBoxStyle}"
+                                     HorizontalAlignment="Stretch" />
+                            <TextBlock Text="Fixed Value"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,8,0,3"
+                                       ToolTip="Value written to Parameter Name 2 on every pick (does not increment)." />
+                            <TextBox x:Name="AtsFixedValueBox"
+                                     Style="{StaticResource CustomTextBoxStyle}"
+                                     HorizontalAlignment="Stretch" />
+                        </StackPanel>
 
                         <!-- Select button -->
-                        <Button Grid.Row="26"
+                        <Button Grid.Row="22"
                                 x:Name="AtsSelectButton"
                                 Content="Select Elements"
                                 Click="AtsSelectButton_Click"
@@ -802,7 +799,7 @@
                                 Height="34" />
 
                         <!-- Result text -->
-                        <ScrollViewer Grid.Row="28" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="24" VerticalScrollBarVisibility="Auto">
                             <TextBlock x:Name="AtsResultText"
                                        Foreground="{DynamicResource ForegroundBrush}"
                                        FontSize="12"

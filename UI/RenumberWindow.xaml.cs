@@ -53,6 +53,7 @@ namespace Renumber.UI
         private const string AtsSuffixKey       = "RenumberWindow.AtsSuffix";
         private const string AtsParamName2Key   = "RenumberWindow.AtsParamName2";
         private const string AtsFixedValueKey   = "RenumberWindow.AtsFixedValue";
+        private const string AtsParam2EnabledKey = "RenumberWindow.AtsParam2Enabled";
         // Direction config keys
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
@@ -303,6 +304,11 @@ namespace Renumber.UI
                     AtsParamName2Box.Text = atsPN2;
                 if (config.TryGetValue(AtsFixedValueKey, out var rawAtsFV) && rawAtsFV is string atsFV)
                     AtsFixedValueBox.Text = atsFV;
+                if (TryGetBool(config, AtsParam2EnabledKey, out bool atsP2) && atsP2)
+                {
+                    AtsParam2EnabledCheck.IsChecked = true;
+                    AtsParam2Panel.Visibility = Visibility.Visible;
+                }
                 if (config.TryGetValue(AtsCategoryKey, out var rawAtsCat) && rawAtsCat is string atsCL)
                 {
                     // Match by label — items not populated yet; defer to Loaded
@@ -403,6 +409,18 @@ namespace Renumber.UI
         { try { var c = LoadConfig(); c[AtsFreezeKey] = true;  SaveConfig(c); } catch { } }
         private void AtsFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
         { try { var c = LoadConfig(); c[AtsFreezeKey] = false; SaveConfig(c); } catch { } }
+
+        private void AtsParam2EnabledCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AtsParam2Panel != null) AtsParam2Panel.Visibility = Visibility.Visible;
+            try { var c = LoadConfig(); c[AtsParam2EnabledKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void AtsParam2EnabledCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (AtsParam2Panel != null) AtsParam2Panel.Visibility = Visibility.Collapsed;
+            try { var c = LoadConfig(); c[AtsParam2EnabledKey] = false; SaveConfig(c); } catch { }
+        }
 
         #endregion
 
@@ -945,7 +963,7 @@ namespace Renumber.UI
             string charCountText = AtsCharCountBox.Text.Trim();
             string prefix    = AtsPrefixBox.Text;
             string suffix    = AtsSuffixBox.Text;
-            string paramName2   = AtsParamName2Box.Text.Trim();
+            string paramName2   = (AtsParam2EnabledCheck.IsChecked == true) ? AtsParamName2Box.Text.Trim() : string.Empty;
             string fixedValue   = AtsFixedValueBox.Text;
 
             int charCount = 0;
@@ -967,6 +985,7 @@ namespace Renumber.UI
                 cfg[AtsSuffixKey]    = suffix;
                 cfg[AtsParamName2Key]  = paramName2;
                 cfg[AtsFixedValueKey]  = fixedValue;
+                cfg[AtsParam2EnabledKey] = AtsParam2EnabledCheck.IsChecked == true;
                 SaveConfig(cfg);
             }
             catch { }
