@@ -43,14 +43,24 @@ namespace Renumber.UI
         private const string HeliParamNameKey   = "RenumberWindow.HeliParamName";
         private const string HeliValue1Key      = "RenumberWindow.HeliValue1";
         private const string HeliValue2Key      = "RenumberWindow.HeliValue2";
+        // ATS config keys
+        private const string AtsModeKey         = "RenumberWindow.AtsMode";
+        private const string AtsCategoryKey     = "RenumberWindow.AtsCategory";
+        private const string AtsParamNameKey    = "RenumberWindow.AtsParamName";
+        private const string AtsValueKey        = "RenumberWindow.AtsValue";
+        private const string AtsCharCountKey    = "RenumberWindow.AtsCharCount";
+        private const string AtsPrefixKey       = "RenumberWindow.AtsPrefix";
+        private const string AtsSuffixKey       = "RenumberWindow.AtsSuffix";
         // Direction config keys
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
         private const string UldDirectionKey    = "RenumberWindow.UldDirection";
+        private const string AtsDirectionKey    = "RenumberWindow.AtsDirection";
         // Freeze config keys
         private const string ElFreezeKey        = "RenumberWindow.ElFreeze";
         private const string LpsFreezeKey       = "RenumberWindow.LpsFreeze";
         private const string UldFreezeKey       = "RenumberWindow.UldFreeze";
+        private const string AtsFreezeKey       = "RenumberWindow.AtsFreeze";
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -128,6 +138,20 @@ namespace Renumber.UI
                     if (item is UldCategoryItem ci && ci.Label == _pendingHeliCategory)
                     {
                         HeliCategoryCombo.SelectedItem = ci;
+                        break;
+                    }
+                }
+            }
+
+            // Populate ATS category dropdown, then restore saved selection
+            PopulateAtsCategories();
+            if (_pendingAtsCategory != null)
+            {
+                foreach (var item in AtsCategoryCombo.Items)
+                {
+                    if (item is UldCategoryItem ci && ci.Label == _pendingAtsCategory)
+                    {
+                        AtsCategoryCombo.SelectedItem = ci;
                         break;
                     }
                 }
@@ -247,6 +271,38 @@ namespace Renumber.UI
                     _pendingHeliCategory = hcl;
                 }
 
+                // ATS mode flag
+                if (TryGetBool(config, AtsModeKey, out bool isAts) && isAts)
+                {
+                    ElModeCheck.IsChecked   = false;
+                    LpsModeCheck.IsChecked  = false;
+                    UldModeCheck.IsChecked  = false;
+                    HeliModeCheck.IsChecked = false;
+                    AtsModeCheck.IsChecked  = true;
+                    ElPanel.Visibility   = Visibility.Collapsed;
+                    LpsPanel.Visibility  = Visibility.Collapsed;
+                    UldPanel.Visibility  = Visibility.Collapsed;
+                    HeliPanel.Visibility = Visibility.Collapsed;
+                    AtsPanel.Visibility  = Visibility.Visible;
+                }
+
+                // ATS field values (restored after category dropdown is populated)
+                if (config.TryGetValue(AtsParamNameKey, out var rawAtsParam) && rawAtsParam is string atsPN)
+                    AtsParamNameBox.Text = atsPN;
+                if (config.TryGetValue(AtsValueKey, out var rawAtsVal) && rawAtsVal is string atsV)
+                    AtsValueBox.Text = atsV;
+                if (config.TryGetValue(AtsCharCountKey, out var rawAtsCC) && rawAtsCC is string atsCC)
+                    AtsCharCountBox.Text = atsCC;
+                if (config.TryGetValue(AtsPrefixKey, out var rawAtsPfx) && rawAtsPfx is string atsPfx)
+                    AtsPrefixBox.Text = atsPfx;
+                if (config.TryGetValue(AtsSuffixKey, out var rawAtsSfx) && rawAtsSfx is string atsSfx)
+                    AtsSuffixBox.Text = atsSfx;
+                if (config.TryGetValue(AtsCategoryKey, out var rawAtsCat) && rawAtsCat is string atsCL)
+                {
+                    // Match by label — items not populated yet; defer to Loaded
+                    _pendingAtsCategory = atsCL;
+                }
+
                 // Direction state
                 if (TryGetBool(config, ElDirectionKey, out bool elDown) && elDown)
                 { ElDirectionUpCheck.IsChecked = false; ElDirectionDownCheck.IsChecked = true; }
@@ -254,10 +310,13 @@ namespace Renumber.UI
                 { LpsDirectionUpCheck.IsChecked = false; LpsDirectionDownCheck.IsChecked = true; }
                 if (TryGetBool(config, UldDirectionKey, out bool uldDown) && uldDown)
                 { UldDirectionUpCheck.IsChecked = false; UldDirectionDownCheck.IsChecked = true; }
+                if (TryGetBool(config, AtsDirectionKey, out bool atsDown) && atsDown)
+                { AtsDirectionUpCheck.IsChecked = false; AtsDirectionDownCheck.IsChecked = true; }
                 // Freeze state
                 if (TryGetBool(config, ElFreezeKey,  out bool elFreeze)  && elFreeze)  ElFreezeCheck.IsChecked  = true;
                 if (TryGetBool(config, LpsFreezeKey, out bool lpsFreeze) && lpsFreeze) LpsFreezeCheck.IsChecked = true;
                 if (TryGetBool(config, UldFreezeKey, out bool uldFreeze) && uldFreeze) UldFreezeCheck.IsChecked = true;
+                if (TryGetBool(config, AtsFreezeKey, out bool atsFreeze) && atsFreeze) AtsFreezeCheck.IsChecked = true;
             }
             catch { }
         }
@@ -266,6 +325,8 @@ namespace Renumber.UI
         private string _pendingUldCategory;
         // Saved category label to restore after PopulateHeliCategories runs
         private string _pendingHeliCategory;
+        // Saved category label to restore after PopulateAtsCategories runs
+        private string _pendingAtsCategory;
 
         #region Direction Toggle Handlers
 
@@ -320,6 +381,23 @@ namespace Renumber.UI
         private void UldFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
         { try { var c = LoadConfig(); c[UldFreezeKey] = false; SaveConfig(c); } catch { } }
 
+        private void AtsDirectionUpCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AtsDirectionDownCheck != null) AtsDirectionDownCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[AtsDirectionKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void AtsDirectionDownCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AtsDirectionUpCheck != null) AtsDirectionUpCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[AtsDirectionKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void AtsFreezeCheck_Checked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[AtsFreezeKey] = true;  SaveConfig(c); } catch { } }
+        private void AtsFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[AtsFreezeKey] = false; SaveConfig(c); } catch { } }
+
         #endregion
 
         private void SaveLpsParams()
@@ -353,16 +431,19 @@ namespace Renumber.UI
             LpsModeCheck.IsChecked  = false;
             UldModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
+            AtsModeCheck.IsChecked  = false;
             ElPanel.Visibility   = Visibility.Visible;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Collapsed;
+            AtsPanel.Visibility  = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
                 cfg[LpsModeKey]  = false;
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = false;
+                cfg[AtsModeKey]  = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -374,16 +455,19 @@ namespace Renumber.UI
             ElModeCheck.IsChecked   = false;
             UldModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
+            AtsModeCheck.IsChecked  = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Visible;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Collapsed;
+            AtsPanel.Visibility  = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
                 cfg[LpsModeKey]  = true;
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = false;
+                cfg[AtsModeKey]  = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -395,16 +479,19 @@ namespace Renumber.UI
             ElModeCheck.IsChecked   = false;
             LpsModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
+            AtsModeCheck.IsChecked  = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Visible;
             HeliPanel.Visibility = Visibility.Collapsed;
+            AtsPanel.Visibility  = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
                 cfg[LpsModeKey]  = false;
                 cfg[UldModeKey]  = true;
                 cfg[HeliModeKey] = false;
+                cfg[AtsModeKey]  = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -416,16 +503,43 @@ namespace Renumber.UI
             ElModeCheck.IsChecked  = false;
             LpsModeCheck.IsChecked = false;
             UldModeCheck.IsChecked = false;
+            AtsModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Visible;
+            AtsPanel.Visibility  = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
                 cfg[LpsModeKey]  = false;
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = true;
+                cfg[AtsModeKey]  = false;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void AtsModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElModeCheck == null) return;
+            ElModeCheck.IsChecked   = false;
+            LpsModeCheck.IsChecked  = false;
+            UldModeCheck.IsChecked  = false;
+            HeliModeCheck.IsChecked = false;
+            ElPanel.Visibility   = Visibility.Collapsed;
+            LpsPanel.Visibility  = Visibility.Collapsed;
+            UldPanel.Visibility  = Visibility.Collapsed;
+            HeliPanel.Visibility = Visibility.Collapsed;
+            AtsPanel.Visibility  = Visibility.Visible;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey]  = false;
+                cfg[UldModeKey]  = false;
+                cfg[HeliModeKey] = false;
+                cfg[AtsModeKey]  = true;
                 SaveConfig(cfg);
             }
             catch { }
@@ -756,6 +870,155 @@ namespace Renumber.UI
                     statusWindow.UpdateStatus(paramValues, pickCount));
 
             _externalEventService.Raise(request);
+        }
+
+        #endregion
+
+        #region ATS Mode
+
+        private void PopulateAtsCategories()
+        {
+            var items = new[]
+            {
+                new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
+                new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Data Devices",              Autodesk.Revit.DB.BuiltInCategory.OST_DataDevices),
+                new UldCategoryItem("Detail Items",               Autodesk.Revit.DB.BuiltInCategory.OST_DetailComponents),
+                new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
+                new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
+                new UldCategoryItem("Electrical Fixtures",       Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalFixtures),
+                new UldCategoryItem("Fire Alarm Devices",        Autodesk.Revit.DB.BuiltInCategory.OST_FireAlarmDevices),
+                new UldCategoryItem("Floors",                    Autodesk.Revit.DB.BuiltInCategory.OST_Floors),
+                new UldCategoryItem("Furniture",                 Autodesk.Revit.DB.BuiltInCategory.OST_Furniture),
+                new UldCategoryItem("Generic Models",            Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel),
+                new UldCategoryItem("Lighting Fixtures",         Autodesk.Revit.DB.BuiltInCategory.OST_LightingFixtures),
+                new UldCategoryItem("Mechanical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_MechanicalEquipment),
+                new UldCategoryItem("Pipes",                     Autodesk.Revit.DB.BuiltInCategory.OST_PipeCurves),
+                new UldCategoryItem("Rooms",                     Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),
+                new UldCategoryItem("Security Devices",          Autodesk.Revit.DB.BuiltInCategory.OST_SecurityDevices),
+                new UldCategoryItem("Structural Columns",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),
+                new UldCategoryItem("Structural Framing",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),
+                new UldCategoryItem("Text Notes",                 Autodesk.Revit.DB.BuiltInCategory.OST_TextNotes,          isTextNote: true),
+                new UldCategoryItem("Walls",                     Autodesk.Revit.DB.BuiltInCategory.OST_Walls),
+                new UldCategoryItem("Windows",                   Autodesk.Revit.DB.BuiltInCategory.OST_Windows),
+            };
+            AtsCategoryCombo.ItemsSource = items;
+            AtsCategoryCombo.SelectedIndex = 0;
+        }
+
+        private void AtsCategoryCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!_isDataLoaded) return;
+            bool isTextNote = (AtsCategoryCombo.SelectedItem as UldCategoryItem)?.IsTextNote == true;
+            var vis = isTextNote ? Visibility.Collapsed : Visibility.Visible;
+            AtsParamNameLabel.Visibility = vis;
+            AtsParamNameBox.Visibility   = vis;
+        }
+
+        private void AtsSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(AtsCategoryCombo.SelectedItem is UldCategoryItem catItem))
+            {
+                AtsResultText.Text = "Please select a category.";
+                return;
+            }
+
+            bool isTextNote = catItem.IsTextNote;
+            string paramName = null;
+            if (!isTextNote)
+            {
+                paramName = AtsParamNameBox.Text.Trim();
+                if (string.IsNullOrWhiteSpace(paramName))
+                {
+                    AtsResultText.Text = "Please enter a parameter name.";
+                    return;
+                }
+            }
+
+            string value     = AtsValueBox.Text;
+            string charCountText = AtsCharCountBox.Text.Trim();
+            string prefix    = AtsPrefixBox.Text;
+            string suffix    = AtsSuffixBox.Text;
+
+            int charCount = 0;
+            if (!string.IsNullOrEmpty(charCountText) && !int.TryParse(charCountText, out charCount))
+            {
+                AtsResultText.Text = "Char Count must be a whole number.";
+                return;
+            }
+
+            // Persist state
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[AtsCategoryKey]  = catItem.Label;
+                cfg[AtsParamNameKey] = paramName ?? string.Empty;
+                cfg[AtsValueKey]     = value;
+                cfg[AtsCharCountKey] = charCountText;
+                cfg[AtsPrefixKey]    = prefix;
+                cfg[AtsSuffixKey]    = suffix;
+                SaveConfig(cfg);
+            }
+            catch { }
+
+            AtsResultText.Text        = string.Empty;
+            AtsSelectButton.IsEnabled = false;
+
+            this.Hide();
+
+            // Show floating status window
+            string statusLabel = isTextNote ? "Text" : paramName;
+            var statusWindow = new LpsStatusWindow();
+            statusWindow.UpdateStatus(new[] { (statusLabel, FormatAtsValue(value, charCount, prefix) + suffix) }, 0);
+            statusWindow.Show();
+            statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
+
+            var request = new Services.Revit.AtsParameterRequest(
+                catItem.Category,
+                paramName,
+                value,
+                charCount,
+                prefix,
+                suffix,
+                AtsDirectionDownCheck.IsChecked == true,
+                AtsFreezeCheck.IsChecked == true,
+                (result, nextValue) =>
+                {
+                    statusWindow.Close();
+
+                    this.Show();
+                    this.Activate();
+                    AtsResultText.Text        = result;
+                    AtsSelectButton.IsEnabled = true;
+
+                    if (nextValue != null)
+                    {
+                        AtsValueBox.Text = nextValue;
+                        try
+                        {
+                            var cfg = LoadConfig();
+                            cfg[AtsValueKey] = nextValue;
+                            SaveConfig(cfg);
+                        }
+                        catch { }
+                    }
+                },
+                onStatusUpdate: (paramValues, pickCount) =>
+                    statusWindow.UpdateStatus(paramValues, pickCount),
+                registerNudge: handler => statusWindow.NudgeRequested = handler);
+
+            _externalEventService.Raise(request);
+        }
+
+        /// <summary>
+        /// Formats a numeric value with left-padding using the first character of <paramref name="fillStr"/>
+        /// to reach <paramref name="charCount"/> total characters.
+        /// </summary>
+        private static string FormatAtsValue(string value, int charCount, string fillStr)
+        {
+            if (charCount <= 0 || string.IsNullOrEmpty(fillStr))
+                return value;
+            return value.PadLeft(charCount, fillStr[0]);
         }
 
         #endregion
