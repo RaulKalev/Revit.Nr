@@ -645,6 +645,14 @@
                             <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />  <!-- Prefix / Suffix row -->
                             <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name 2 TextBox -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Fixed Value label -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Fixed Value TextBox -->
+                            <RowDefinition Height="8" />
                             <RowDefinition Height="Auto" />  <!-- Select button -->
                             <RowDefinition Height="10" />
                             <RowDefinition Height="*" />     <!-- Result text -->
@@ -757,8 +765,34 @@
                             </StackPanel>
                         </Grid>
 
+                        <!-- Parameter Name 2 label -->
+                        <TextBlock Grid.Row="18"
+                                   Text="Parameter Name 2 (optional)"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   ToolTip="A second parameter written with a fixed value on every pick." />
+
+                        <!-- Parameter Name 2 TextBox -->
+                        <TextBox Grid.Row="20"
+                                 x:Name="AtsParamName2Box"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Fixed Value label -->
+                        <TextBlock Grid.Row="22"
+                                   Text="Fixed Value"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   ToolTip="Value written to Parameter Name 2 on every pick (does not increment)." />
+
+                        <!-- Fixed Value TextBox -->
+                        <TextBox Grid.Row="24"
+                                 x:Name="AtsFixedValueBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
                         <!-- Select button -->
-                        <Button Grid.Row="18"
+                        <Button Grid.Row="26"
                                 x:Name="AtsSelectButton"
                                 Content="Select Elements"
                                 Click="AtsSelectButton_Click"
@@ -768,7 +802,7 @@
                                 Height="34" />
 
                         <!-- Result text -->
-                        <ScrollViewer Grid.Row="20" VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer Grid.Row="28" VerticalScrollBarVisibility="Auto">
                             <TextBlock x:Name="AtsResultText"
                                        Foreground="{DynamicResource ForegroundBrush}"
                                        FontSize="12"

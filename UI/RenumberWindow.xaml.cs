@@ -51,6 +51,8 @@ namespace Renumber.UI
         private const string AtsCharCountKey    = "RenumberWindow.AtsCharCount";
         private const string AtsPrefixKey       = "RenumberWindow.AtsPrefix";
         private const string AtsSuffixKey       = "RenumberWindow.AtsSuffix";
+        private const string AtsParamName2Key   = "RenumberWindow.AtsParamName2";
+        private const string AtsFixedValueKey   = "RenumberWindow.AtsFixedValue";
         // Direction config keys
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
@@ -297,6 +299,10 @@ namespace Renumber.UI
                     AtsPrefixBox.Text = atsPfx;
                 if (config.TryGetValue(AtsSuffixKey, out var rawAtsSfx) && rawAtsSfx is string atsSfx)
                     AtsSuffixBox.Text = atsSfx;
+                if (config.TryGetValue(AtsParamName2Key, out var rawAtsPN2) && rawAtsPN2 is string atsPN2)
+                    AtsParamName2Box.Text = atsPN2;
+                if (config.TryGetValue(AtsFixedValueKey, out var rawAtsFV) && rawAtsFV is string atsFV)
+                    AtsFixedValueBox.Text = atsFV;
                 if (config.TryGetValue(AtsCategoryKey, out var rawAtsCat) && rawAtsCat is string atsCL)
                 {
                     // Match by label — items not populated yet; defer to Loaded
@@ -939,6 +945,8 @@ namespace Renumber.UI
             string charCountText = AtsCharCountBox.Text.Trim();
             string prefix    = AtsPrefixBox.Text;
             string suffix    = AtsSuffixBox.Text;
+            string paramName2   = AtsParamName2Box.Text.Trim();
+            string fixedValue   = AtsFixedValueBox.Text;
 
             int charCount = 0;
             if (!string.IsNullOrEmpty(charCountText) && !int.TryParse(charCountText, out charCount))
@@ -957,6 +965,8 @@ namespace Renumber.UI
                 cfg[AtsCharCountKey] = charCountText;
                 cfg[AtsPrefixKey]    = prefix;
                 cfg[AtsSuffixKey]    = suffix;
+                cfg[AtsParamName2Key]  = paramName2;
+                cfg[AtsFixedValueKey]  = fixedValue;
                 SaveConfig(cfg);
             }
             catch { }
@@ -980,6 +990,8 @@ namespace Renumber.UI
                 charCount,
                 prefix,
                 suffix,
+                paramName2,
+                fixedValue,
                 AtsDirectionDownCheck.IsChecked == true,
                 AtsFreezeCheck.IsChecked == true,
                 (result, nextValue) =>

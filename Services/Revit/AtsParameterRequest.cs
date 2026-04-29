@@ -22,6 +22,8 @@ namespace Renumber.Services.Revit
         private readonly int    _charCount;
         private readonly string _fillStr;
         private readonly string _suffix;
+        private readonly string _parameterName2;
+        private readonly string _fixedValue;
         private readonly bool   _goDown;
         private readonly bool   _freeze;
         private readonly Action<string, string> _onComplete;
@@ -41,20 +43,24 @@ namespace Renumber.Services.Revit
             int charCount,
             string fillStr,
             string suffix,
+            string parameterName2,
+            string fixedValue,
             bool goDown,
             bool freeze,
             Action<string, string> onComplete,
             Action<IEnumerable<(string name, string value)>, int> onStatusUpdate = null,
             Action<Action<int>> registerNudge = null)
         {
-            _category      = category;
-            _parameterName = parameterName;
-            _startValue    = startValue;
-            _charCount     = charCount;
-            _fillStr       = fillStr  ?? string.Empty;
-            _suffix        = suffix   ?? string.Empty;
-            _goDown        = goDown;
-            _freeze        = freeze;
+            _category       = category;
+            _parameterName  = parameterName;
+            _startValue     = startValue;
+            _charCount      = charCount;
+            _fillStr        = fillStr        ?? string.Empty;
+            _suffix         = suffix         ?? string.Empty;
+            _parameterName2 = parameterName2 ?? string.Empty;
+            _fixedValue     = fixedValue     ?? string.Empty;
+            _goDown         = goDown;
+            _freeze         = freeze;
             _onComplete    = onComplete ?? throw new ArgumentNullException(nameof(onComplete));
             _onStatusUpdate = onStatusUpdate;
             _registerNudge  = registerNudge;
@@ -152,6 +158,14 @@ namespace Renumber.Services.Revit
                         {
                             line = $"{elemName}: element is not a TextNote";
                         }
+
+                        // Write second parameter with fixed value if configured
+                        if (!string.IsNullOrEmpty(_parameterName2))
+                        {
+                            Parameter param2 = elem.LookupParameter(_parameterName2);
+                            if (param2 != null && !param2.IsReadOnly)
+                                WriteParameter(param2, _fixedValue, out _);
+                        }
                     }
                     else
                     {
@@ -172,6 +186,14 @@ namespace Renumber.Services.Revit
                         else
                         {
                             line = $"{elemName}: {err}";
+                        }
+
+                        // Write second parameter with fixed value if configured
+                        if (!string.IsNullOrEmpty(_parameterName2))
+                        {
+                            Parameter param2 = elem.LookupParameter(_parameterName2);
+                            if (param2 != null && !param2.IsReadOnly)
+                                WriteParameter(param2, _fixedValue, out _);
                         }
                     }
 
