@@ -113,37 +113,44 @@
                     </Grid.RowDefinitions>
 
                     <!-- Mode selector: EL / LPS / Üld -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <CheckBox x:Name="ElModeCheck"
                                   Content="EL"
                                   IsChecked="True"
                                   Checked="ElModeCheck_Checked"
                                   Style="{StaticResource CustomCheckboxStyleCompact}"
-                                  Margin="0,0,20,0" />
+                                  Margin="0,0,10,2" />
                         <CheckBox x:Name="LpsModeCheck"
                                   Content="LPS"
                                   IsChecked="False"
                                   Checked="LpsModeCheck_Checked"
                                   Style="{StaticResource CustomCheckboxStyleCompact}"
-                                  Margin="0,0,20,0" />
+                                  Margin="0,0,10,2" />
                         <CheckBox x:Name="UldModeCheck"
                                   Content="Üld"
                                   IsChecked="False"
                                   Checked="UldModeCheck_Checked"
                                   Style="{StaticResource CustomCheckboxStyleCompact}"
-                                  Margin="0,0,20,0" />
+                                  Margin="0,0,10,2" />
                         <CheckBox x:Name="HeliModeCheck"
                                   Content="Heli"
                                   IsChecked="False"
                                   Checked="HeliModeCheck_Checked"
                                   Style="{StaticResource CustomCheckboxStyleCompact}"
-                                  Margin="0,0,20,0" />
+                                  Margin="0,0,10,2" />
                         <CheckBox x:Name="AtsModeCheck"
                                   Content="ATS"
                                   IsChecked="False"
                                   Checked="AtsModeCheck_Checked"
-                                  Style="{StaticResource CustomCheckboxStyleCompact}" />
-                    </StackPanel>
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  Margin="0,0,10,2" />
+                        <CheckBox x:Name="SideModeCheck"
+                                  Content="Side"
+                                  IsChecked="False"
+                                  Checked="SideModeCheck_Checked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  Margin="0,0,0,2" />
+                    </WrapPanel>
 
                     <!-- ============================================================
                          EL Panel (existing functionality)
@@ -801,6 +808,229 @@
                         <!-- Result text -->
                         <ScrollViewer Grid.Row="24" VerticalScrollBarVisibility="Auto">
                             <TextBlock x:Name="AtsResultText"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       VerticalAlignment="Top"
+                                       Opacity="0.85" />
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- ============================================================
+                         Side Panel (category + parameter + incrementing value)
+                    ============================================================ -->
+                    <Grid x:Name="SidePanel" Grid.Row="2" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />  <!-- Category label, row 0 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Category ComboBox, row 2 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name label, row 4 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Parameter Name TextBox, row 6 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Value label + direction, row 8 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Value TextBox, row 10 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Double checkbox, row 12 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Double panel (divider + value2), row 14 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Circuit Limit label + Reset button, row 16 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Circuit Limit TextBox, row 18 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Char Count label, row 20 -->
+                            <RowDefinition Height="6" />
+                            <RowDefinition Height="Auto" />  <!-- Char Count TextBox, row 22 -->
+                            <RowDefinition Height="8" />
+                            <RowDefinition Height="Auto" />  <!-- Prefix / Suffix row, row 24 -->
+                            <RowDefinition Height="14" />
+                            <RowDefinition Height="Auto" />  <!-- Select button, row 26 -->
+                            <RowDefinition Height="10" />
+                            <RowDefinition Height="*" />     <!-- Result text, row 28 -->
+                        </Grid.RowDefinitions>
+
+                        <!-- Category label -->
+                        <TextBlock Grid.Row="0"
+                                   Text="Category"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Category ComboBox -->
+                        <ComboBox Grid.Row="2"
+                                  x:Name="SideCategoryCombo"
+                                  Style="{StaticResource DarkThemeComboBox}"
+                                  SelectionChanged="SideCategoryCombo_SelectionChanged"
+                                  HorizontalAlignment="Stretch" />
+
+                        <!-- Parameter Name label -->
+                        <TextBlock Grid.Row="4"
+                                   x:Name="SideParamNameLabel"
+                                   Text="Parameter Name"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold" />
+
+                        <!-- Parameter Name TextBox -->
+                        <TextBox Grid.Row="6"
+                                 x:Name="SideParamNameBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Value label + direction -->
+                        <Grid Grid.Row="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Value"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <CheckBox x:Name="SideDirectionUpCheck"
+                                          Content="↑"
+                                          IsChecked="True"
+                                          Checked="SideDirectionUpCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="SideDirectionDownCheck"
+                                          Content="↓"
+                                          IsChecked="False"
+                                          Checked="SideDirectionDownCheck_Checked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          Margin="0,0,6,0" />
+                                <CheckBox x:Name="SideFreezeCheck"
+                                          Content="="
+                                          IsChecked="False"
+                                          Checked="SideFreezeCheck_Checked"
+                                          Unchecked="SideFreezeCheck_Unchecked"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          ToolTip="Freeze: apply the same value to every pick without incrementing" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Value TextBox -->
+                        <TextBox Grid.Row="10"
+                                 x:Name="SideValueBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Double checkbox -->
+                        <CheckBox Grid.Row="12"
+                                  x:Name="SideDoubleCheck"
+                                  Content="Double"
+                                  IsChecked="False"
+                                  Checked="SideDoubleCheck_Checked"
+                                  Unchecked="SideDoubleCheck_Unchecked"
+                                  Style="{StaticResource CustomCheckboxStyleCompact}"
+                                  ToolTip="Write two incrementing values separated by a divider (e.g. 01/02 → 03/04, both increment by 2)" />
+
+                        <!-- Double panel: Divider + Value 2 (collapsed until Double is checked) -->
+                        <StackPanel Grid.Row="14"
+                                    x:Name="SideDoublePanel"
+                                    Visibility="Collapsed">
+                            <TextBlock Text="Divider"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,0,0,3" />
+                            <TextBox x:Name="SideDividerBox"
+                                     Style="{StaticResource CustomTextBoxStyle}"
+                                     HorizontalAlignment="Stretch" />
+                            <TextBlock Text="Value 2"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Margin="0,8,0,3" />
+                            <TextBox x:Name="SideValue2Box"
+                                     Style="{StaticResource CustomTextBoxStyle}"
+                                     HorizontalAlignment="Stretch" />
+                        </StackPanel>
+
+                        <!-- Circuit Limit label + Reset button -->
+                        <Grid Grid.Row="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="Circuit Limit"
+                                       Foreground="{DynamicResource ForegroundBrush}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"
+                                       ToolTip="When the value reaches this limit it wraps back to 1 (Value 2 wraps to 2 in Double mode)" />
+                            <Button Grid.Column="1"
+                                    x:Name="SideResetButton"
+                                    Content="Reset"
+                                    Click="SideResetButton_Click"
+                                    Style="{StaticResource CustomActionButtonStyle}"
+                                    Height="22" Padding="8,0"
+                                    FontSize="11"
+                                    ToolTip="Reset Value to 1 (and Value 2 to 2 in Double mode)" />
+                        </Grid>
+
+                        <!-- Circuit Limit TextBox -->
+                        <TextBox Grid.Row="18"
+                                 x:Name="SideCircuitLimitBox"
+                                 Text="24"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Char Count label -->
+                        <TextBlock Grid.Row="20"
+                                   Text="Char Count"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   ToolTip="Total character width of each number. The prefix character pads the left side to reach this width." />
+
+                        <!-- Char Count TextBox -->
+                        <TextBox Grid.Row="22"
+                                 x:Name="SideCharCountBox"
+                                 Style="{StaticResource CustomTextBoxStyle}"
+                                 HorizontalAlignment="Stretch" />
+
+                        <!-- Prefix (fill char) / Suffix row -->
+                        <Grid Grid.Row="24">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="10" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Prefix (fill char)"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,0,0,3"
+                                           ToolTip="Single character used to left-pad each value to the Char Count width (e.g. '0' gives 01, 02 …)" />
+                                <TextBox x:Name="SidePrefixBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Suffix"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Margin="0,0,0,3" />
+                                <TextBox x:Name="SideSuffixBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Select button -->
+                        <Button Grid.Row="26"
+                                x:Name="SideSelectButton"
+                                Content="Select Elements"
+                                Click="SideSelectButton_Click"
+                                Style="{StaticResource CustomActionButtonStyle}"
+                                Width="Auto"
+                                HorizontalAlignment="Stretch"
+                                Height="34" />
+
+                        <!-- Result text -->
+                        <ScrollViewer Grid.Row="28" VerticalScrollBarVisibility="Auto">
+                            <TextBlock x:Name="SideResultText"
                                        Foreground="{DynamicResource ForegroundBrush}"
                                        FontSize="12"
                                        TextWrapping="Wrap"

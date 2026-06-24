@@ -14,6 +14,15 @@
     WindowStartupLocation="Manual"
     MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Renumber;component/UI/Themes/DarkTheme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Renumber;component/UI/Themes/ElementStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
     <Border
         Background="#FF222222"
         BorderBrush="#FF555555"
@@ -149,6 +158,18 @@
                        Foreground="#FFFFFFFF"
                        FontSize="10"
                        HorizontalAlignment="Center" />
+
+            <!-- Double toggle (only visible in Side double mode) -->
+            <Rectangle x:Name="DoubleToggleSep" Height="1" Fill="#FF383838" Margin="0,8,0,6"
+                       Visibility="Collapsed" />
+            <CheckBox x:Name="DoubleToggleCheck"
+                      Content="Double"
+                      IsChecked="True"
+                      Checked="DoubleToggleCheck_Checked"
+                      Unchecked="DoubleToggleCheck_Unchecked"
+                      Style="{StaticResource CustomCheckboxStyleCompact}"
+                      HorizontalAlignment="Left"
+                      Visibility="Collapsed" />
 
         </StackPanel>
     </Border>

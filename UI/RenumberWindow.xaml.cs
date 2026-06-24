@@ -54,16 +54,30 @@ namespace Renumber.UI
         private const string AtsParamName2Key   = "RenumberWindow.AtsParamName2";
         private const string AtsFixedValueKey   = "RenumberWindow.AtsFixedValue";
         private const string AtsParam2EnabledKey = "RenumberWindow.AtsParam2Enabled";
+        // Side config keys
+        private const string SideModeKey        = "RenumberWindow.SideMode";
+        private const string SideCategoryKey    = "RenumberWindow.SideCategory";
+        private const string SideParamNameKey   = "RenumberWindow.SideParamName";
+        private const string SideValueKey       = "RenumberWindow.SideValue";
+        private const string SideDoubleKey      = "RenumberWindow.SideDouble";
+        private const string SideValue2Key      = "RenumberWindow.SideValue2";
+        private const string SideDividerKey     = "RenumberWindow.SideDivider";
+        private const string SideCharCountKey   = "RenumberWindow.SideCharCount";
+        private const string SidePrefixKey      = "RenumberWindow.SidePrefix";
+        private const string SideSuffixKey      = "RenumberWindow.SideSuffix";
+        private const string SideCircuitLimitKey = "RenumberWindow.SideCircuitLimit";
         // Direction config keys
         private const string ElDirectionKey     = "RenumberWindow.ElDirection";
         private const string LpsDirectionKey    = "RenumberWindow.LpsDirection";
         private const string UldDirectionKey    = "RenumberWindow.UldDirection";
         private const string AtsDirectionKey    = "RenumberWindow.AtsDirection";
+        private const string SideDirectionKey   = "RenumberWindow.SideDirection";
         // Freeze config keys
         private const string ElFreezeKey        = "RenumberWindow.ElFreeze";
         private const string LpsFreezeKey       = "RenumberWindow.LpsFreeze";
         private const string UldFreezeKey       = "RenumberWindow.UldFreeze";
         private const string AtsFreezeKey       = "RenumberWindow.AtsFreeze";
+        private const string SideFreezeKey      = "RenumberWindow.SideFreeze";
 
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -160,6 +174,20 @@ namespace Renumber.UI
                 }
             }
 
+            // Populate Side category dropdown, then restore saved selection
+            PopulateSideCategories();
+            if (_pendingSideCategory != null)
+            {
+                foreach (var item in SideCategoryCombo.Items)
+                {
+                    if (item is UldCategoryItem ci && ci.Label == _pendingSideCategory)
+                    {
+                        SideCategoryCombo.SelectedItem = ci;
+                        break;
+                    }
+                }
+            }
+
             _isDataLoaded = true;
             TryShowWindow();
         }
@@ -167,6 +195,28 @@ namespace Renumber.UI
         private void MainWindow_Closed(object sender, EventArgs e)
         {
             SaveWindowState();
+            SaveSideState();
+        }
+
+        private void SaveSideState()
+        {
+            try
+            {
+                var cfg = LoadConfig();
+                if (SideCategoryCombo.SelectedItem is UldCategoryItem ci)
+                    cfg[SideCategoryKey]  = ci.Label;
+                cfg[SideParamNameKey] = SideParamNameBox.Text;
+                cfg[SideValueKey]     = SideValueBox.Text;
+                cfg[SideValue2Key]    = SideValue2Box.Text;
+                cfg[SideDividerKey]   = SideDividerBox.Text;
+                cfg[SideCharCountKey] = SideCharCountBox.Text;
+                cfg[SidePrefixKey]    = SidePrefixBox.Text;
+                cfg[SideSuffixKey]    = SideSuffixBox.Text;
+                cfg[SideCircuitLimitKey] = SideCircuitLimitBox.Text;
+                cfg[SideDoubleKey]    = SideDoubleCheck.IsChecked == true;
+                SaveConfig(cfg);
+            }
+            catch { }
         }
 
         private void LoadParameterNameState()
@@ -315,6 +365,51 @@ namespace Renumber.UI
                     _pendingAtsCategory = atsCL;
                 }
 
+                // Side mode flag
+                if (TryGetBool(config, SideModeKey, out bool isSide) && isSide)
+                {
+                    ElModeCheck.IsChecked   = false;
+                    LpsModeCheck.IsChecked  = false;
+                    UldModeCheck.IsChecked  = false;
+                    HeliModeCheck.IsChecked = false;
+                    AtsModeCheck.IsChecked  = false;
+                    SideModeCheck.IsChecked = true;
+                    ElPanel.Visibility   = Visibility.Collapsed;
+                    LpsPanel.Visibility  = Visibility.Collapsed;
+                    UldPanel.Visibility  = Visibility.Collapsed;
+                    HeliPanel.Visibility = Visibility.Collapsed;
+                    AtsPanel.Visibility  = Visibility.Collapsed;
+                    SidePanel.Visibility = Visibility.Visible;
+                }
+
+                // Side field values (restored after category dropdown is populated)
+                if (config.TryGetValue(SideParamNameKey, out var rawSideParam) && rawSideParam is string sidePN)
+                    SideParamNameBox.Text = sidePN;
+                if (config.TryGetValue(SideValueKey, out var rawSideVal) && rawSideVal is string sideV)
+                    SideValueBox.Text = sideV;
+                if (config.TryGetValue(SideValue2Key, out var rawSideV2) && rawSideV2 is string sideV2)
+                    SideValue2Box.Text = sideV2;
+                if (config.TryGetValue(SideDividerKey, out var rawSideDiv) && rawSideDiv is string sideDiv)
+                    SideDividerBox.Text = sideDiv;
+                if (config.TryGetValue(SideCharCountKey, out var rawSideCC) && rawSideCC is string sideCC)
+                    SideCharCountBox.Text = sideCC;
+                if (config.TryGetValue(SidePrefixKey, out var rawSidePfx) && rawSidePfx is string sidePfx)
+                    SidePrefixBox.Text = sidePfx;
+                if (config.TryGetValue(SideSuffixKey, out var rawSideSfx) && rawSideSfx is string sideSfx)
+                    SideSuffixBox.Text = sideSfx;
+                if (config.TryGetValue(SideCircuitLimitKey, out var rawSideLim) && rawSideLim is string sideLim)
+                    SideCircuitLimitBox.Text = sideLim;
+                if (TryGetBool(config, SideDoubleKey, out bool sideDouble) && sideDouble)
+                {
+                    SideDoubleCheck.IsChecked = true;
+                    SideDoublePanel.Visibility = Visibility.Visible;
+                }
+                if (config.TryGetValue(SideCategoryKey, out var rawSideCat) && rawSideCat is string sideCL)
+                {
+                    // Match by label — items not populated yet; defer to Loaded
+                    _pendingSideCategory = sideCL;
+                }
+
                 // Direction state
                 if (TryGetBool(config, ElDirectionKey, out bool elDown) && elDown)
                 { ElDirectionUpCheck.IsChecked = false; ElDirectionDownCheck.IsChecked = true; }
@@ -324,11 +419,14 @@ namespace Renumber.UI
                 { UldDirectionUpCheck.IsChecked = false; UldDirectionDownCheck.IsChecked = true; }
                 if (TryGetBool(config, AtsDirectionKey, out bool atsDown) && atsDown)
                 { AtsDirectionUpCheck.IsChecked = false; AtsDirectionDownCheck.IsChecked = true; }
+                if (TryGetBool(config, SideDirectionKey, out bool sideDown) && sideDown)
+                { SideDirectionUpCheck.IsChecked = false; SideDirectionDownCheck.IsChecked = true; }
                 // Freeze state
                 if (TryGetBool(config, ElFreezeKey,  out bool elFreeze)  && elFreeze)  ElFreezeCheck.IsChecked  = true;
                 if (TryGetBool(config, LpsFreezeKey, out bool lpsFreeze) && lpsFreeze) LpsFreezeCheck.IsChecked = true;
                 if (TryGetBool(config, UldFreezeKey, out bool uldFreeze) && uldFreeze) UldFreezeCheck.IsChecked = true;
                 if (TryGetBool(config, AtsFreezeKey, out bool atsFreeze) && atsFreeze) AtsFreezeCheck.IsChecked = true;
+                if (TryGetBool(config, SideFreezeKey, out bool sideFreeze) && sideFreeze) SideFreezeCheck.IsChecked = true;
             }
             catch { }
         }
@@ -339,6 +437,8 @@ namespace Renumber.UI
         private string _pendingHeliCategory;
         // Saved category label to restore after PopulateAtsCategories runs
         private string _pendingAtsCategory;
+        // Saved category label to restore after PopulateSideCategories runs
+        private string _pendingSideCategory;
 
         #region Direction Toggle Handlers
 
@@ -422,6 +522,42 @@ namespace Renumber.UI
             try { var c = LoadConfig(); c[AtsParam2EnabledKey] = false; SaveConfig(c); } catch { }
         }
 
+        private void SideDirectionUpCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (SideDirectionDownCheck != null) SideDirectionDownCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[SideDirectionKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void SideDirectionDownCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (SideDirectionUpCheck != null) SideDirectionUpCheck.IsChecked = false;
+            try { var c = LoadConfig(); c[SideDirectionKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void SideFreezeCheck_Checked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[SideFreezeKey] = true;  SaveConfig(c); } catch { } }
+        private void SideFreezeCheck_Unchecked(object sender, RoutedEventArgs e)
+        { try { var c = LoadConfig(); c[SideFreezeKey] = false; SaveConfig(c); } catch { } }
+
+        private void SideDoubleCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (SideDoublePanel != null) SideDoublePanel.Visibility = Visibility.Visible;
+            try { var c = LoadConfig(); c[SideDoubleKey] = true; SaveConfig(c); } catch { }
+        }
+
+        private void SideDoubleCheck_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (SideDoublePanel != null) SideDoublePanel.Visibility = Visibility.Collapsed;
+            try { var c = LoadConfig(); c[SideDoubleKey] = false; SaveConfig(c); } catch { }
+        }
+
+        private void SideResetButton_Click(object sender, RoutedEventArgs e)
+        {
+            SideValueBox.Text = "1";
+            if (SideDoubleCheck.IsChecked == true)
+                SideValue2Box.Text = "2";
+        }
+
         #endregion
 
         private void SaveLpsParams()
@@ -456,11 +592,13 @@ namespace Renumber.UI
             UldModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
             AtsModeCheck.IsChecked  = false;
+            SideModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Visible;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Collapsed;
             AtsPanel.Visibility  = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
@@ -468,6 +606,7 @@ namespace Renumber.UI
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = false;
                 cfg[AtsModeKey]  = false;
+                cfg[SideModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -480,11 +619,13 @@ namespace Renumber.UI
             UldModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
             AtsModeCheck.IsChecked  = false;
+            SideModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Visible;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Collapsed;
             AtsPanel.Visibility  = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
@@ -492,6 +633,7 @@ namespace Renumber.UI
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = false;
                 cfg[AtsModeKey]  = false;
+                cfg[SideModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -504,11 +646,13 @@ namespace Renumber.UI
             LpsModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
             AtsModeCheck.IsChecked  = false;
+            SideModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Visible;
             HeliPanel.Visibility = Visibility.Collapsed;
             AtsPanel.Visibility  = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
@@ -516,6 +660,7 @@ namespace Renumber.UI
                 cfg[UldModeKey]  = true;
                 cfg[HeliModeKey] = false;
                 cfg[AtsModeKey]  = false;
+                cfg[SideModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -524,15 +669,17 @@ namespace Renumber.UI
         private void HeliModeCheck_Checked(object sender, RoutedEventArgs e)
         {
             if (ElModeCheck == null) return;
-            ElModeCheck.IsChecked  = false;
-            LpsModeCheck.IsChecked = false;
-            UldModeCheck.IsChecked = false;
-            AtsModeCheck.IsChecked = false;
+            ElModeCheck.IsChecked   = false;
+            LpsModeCheck.IsChecked  = false;
+            UldModeCheck.IsChecked  = false;
+            AtsModeCheck.IsChecked  = false;
+            SideModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Visible;
             AtsPanel.Visibility  = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
@@ -540,6 +687,7 @@ namespace Renumber.UI
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = true;
                 cfg[AtsModeKey]  = false;
+                cfg[SideModeKey] = false;
                 SaveConfig(cfg);
             }
             catch { }
@@ -552,11 +700,13 @@ namespace Renumber.UI
             LpsModeCheck.IsChecked  = false;
             UldModeCheck.IsChecked  = false;
             HeliModeCheck.IsChecked = false;
+            SideModeCheck.IsChecked = false;
             ElPanel.Visibility   = Visibility.Collapsed;
             LpsPanel.Visibility  = Visibility.Collapsed;
             UldPanel.Visibility  = Visibility.Collapsed;
             HeliPanel.Visibility = Visibility.Collapsed;
             AtsPanel.Visibility  = Visibility.Visible;
+            SidePanel.Visibility = Visibility.Collapsed;
             try
             {
                 var cfg = LoadConfig();
@@ -564,6 +714,34 @@ namespace Renumber.UI
                 cfg[UldModeKey]  = false;
                 cfg[HeliModeKey] = false;
                 cfg[AtsModeKey]  = true;
+                cfg[SideModeKey] = false;
+                SaveConfig(cfg);
+            }
+            catch { }
+        }
+
+        private void SideModeCheck_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ElModeCheck == null) return;
+            ElModeCheck.IsChecked   = false;
+            LpsModeCheck.IsChecked  = false;
+            UldModeCheck.IsChecked  = false;
+            HeliModeCheck.IsChecked = false;
+            AtsModeCheck.IsChecked  = false;
+            ElPanel.Visibility   = Visibility.Collapsed;
+            LpsPanel.Visibility  = Visibility.Collapsed;
+            UldPanel.Visibility  = Visibility.Collapsed;
+            HeliPanel.Visibility = Visibility.Collapsed;
+            AtsPanel.Visibility  = Visibility.Collapsed;
+            SidePanel.Visibility = Visibility.Visible;
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[LpsModeKey]  = false;
+                cfg[UldModeKey]  = false;
+                cfg[HeliModeKey] = false;
+                cfg[AtsModeKey]  = false;
+                cfg[SideModeKey] = true;
                 SaveConfig(cfg);
             }
             catch { }
@@ -1050,6 +1228,189 @@ namespace Renumber.UI
             if (charCount <= 0 || string.IsNullOrEmpty(fillStr))
                 return value;
             return value.PadLeft(charCount, fillStr[0]);
+        }
+
+        #endregion
+
+        #region Side Mode
+
+        private void PopulateSideCategories()
+        {
+            var items = new[]
+            {
+                new UldCategoryItem("Communication Devices",    Autodesk.Revit.DB.BuiltInCategory.OST_CommunicationDevices),
+                new UldCategoryItem("Conduit",                   Autodesk.Revit.DB.BuiltInCategory.OST_Conduit),
+                new UldCategoryItem("Data Devices",              Autodesk.Revit.DB.BuiltInCategory.OST_DataDevices),
+                new UldCategoryItem("Detail Items",               Autodesk.Revit.DB.BuiltInCategory.OST_DetailComponents),
+                new UldCategoryItem("Doors",                     Autodesk.Revit.DB.BuiltInCategory.OST_Doors),
+                new UldCategoryItem("Electrical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalEquipment),
+                new UldCategoryItem("Electrical Fixtures",       Autodesk.Revit.DB.BuiltInCategory.OST_ElectricalFixtures),
+                new UldCategoryItem("Fire Alarm Devices",        Autodesk.Revit.DB.BuiltInCategory.OST_FireAlarmDevices),
+                new UldCategoryItem("Floors",                    Autodesk.Revit.DB.BuiltInCategory.OST_Floors),
+                new UldCategoryItem("Furniture",                 Autodesk.Revit.DB.BuiltInCategory.OST_Furniture),
+                new UldCategoryItem("Generic Models",            Autodesk.Revit.DB.BuiltInCategory.OST_GenericModel),
+                new UldCategoryItem("Lighting Fixtures",         Autodesk.Revit.DB.BuiltInCategory.OST_LightingFixtures),
+                new UldCategoryItem("Mechanical Equipment",      Autodesk.Revit.DB.BuiltInCategory.OST_MechanicalEquipment),
+                new UldCategoryItem("Pipes",                     Autodesk.Revit.DB.BuiltInCategory.OST_PipeCurves),
+                new UldCategoryItem("Rooms",                     Autodesk.Revit.DB.BuiltInCategory.OST_Rooms),
+                new UldCategoryItem("Security Devices",          Autodesk.Revit.DB.BuiltInCategory.OST_SecurityDevices),
+                new UldCategoryItem("Structural Columns",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralColumns),
+                new UldCategoryItem("Structural Framing",        Autodesk.Revit.DB.BuiltInCategory.OST_StructuralFraming),
+                new UldCategoryItem("Walls",                     Autodesk.Revit.DB.BuiltInCategory.OST_Walls),
+                new UldCategoryItem("Windows",                   Autodesk.Revit.DB.BuiltInCategory.OST_Windows),
+            };
+            SideCategoryCombo.ItemsSource = items;
+            SideCategoryCombo.SelectedIndex = 0;
+        }
+
+        private void SideCategoryCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (!_isDataLoaded) return;
+            if (SideCategoryCombo.SelectedItem is UldCategoryItem catItem)
+            {
+                try
+                {
+                    var cfg = LoadConfig();
+                    cfg[SideCategoryKey] = catItem.Label;
+                    SaveConfig(cfg);
+                }
+                catch { }
+            }
+        }
+
+        private void SideSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(SideCategoryCombo.SelectedItem is UldCategoryItem catItem))
+            {
+                SideResultText.Text = "Please select a category.";
+                return;
+            }
+
+            string paramName = SideParamNameBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(paramName))
+            {
+                SideResultText.Text = "Please enter a parameter name.";
+                return;
+            }
+
+            bool isDouble = SideDoubleCheck.IsChecked == true;
+            string value     = SideValueBox.Text;
+            string value2    = SideValue2Box.Text;
+            string divider   = SideDividerBox.Text;
+            string charCountText = SideCharCountBox.Text.Trim();
+            string prefix    = SidePrefixBox.Text;
+            string suffix    = SideSuffixBox.Text;
+            string circuitLimitText = SideCircuitLimitBox.Text.Trim();
+
+            int charCount = 0;
+            if (!string.IsNullOrEmpty(charCountText) && !int.TryParse(charCountText, out charCount))
+            {
+                SideResultText.Text = "Char Count must be a whole number.";
+                return;
+            }
+
+            int circuitLimit = 0;
+            if (!string.IsNullOrEmpty(circuitLimitText) && !int.TryParse(circuitLimitText, out circuitLimit))
+            {
+                SideResultText.Text = "Circuit Limit must be a whole number.";
+                return;
+            }
+
+            // Persist state
+            try
+            {
+                var cfg = LoadConfig();
+                cfg[SideCategoryKey]  = catItem.Label;
+                cfg[SideParamNameKey] = paramName;
+                cfg[SideValueKey]     = value;
+                cfg[SideDoubleKey]    = isDouble;
+                cfg[SideValue2Key]    = value2;
+                cfg[SideDividerKey]   = divider;
+                cfg[SideCharCountKey] = charCountText;
+                cfg[SidePrefixKey]    = prefix;
+                cfg[SideSuffixKey]    = suffix;
+                cfg[SideCircuitLimitKey] = circuitLimitText;
+                SaveConfig(cfg);
+            }
+            catch { }
+
+            SideResultText.Text        = string.Empty;
+            SideSelectButton.IsEnabled = false;
+
+            this.Hide();
+
+            // Format preview for status window
+            string previewVal = value;
+            if (charCount > 0 && !string.IsNullOrEmpty(prefix))
+                previewVal = value.PadLeft(charCount, prefix[0]);
+            previewVal += suffix;
+            if (isDouble)
+            {
+                string previewVal2 = value2;
+                if (charCount > 0 && !string.IsNullOrEmpty(prefix))
+                    previewVal2 = value2.PadLeft(charCount, prefix[0]);
+                previewVal2 += suffix;
+                previewVal = previewVal + divider + previewVal2;
+            }
+
+            var statusWindow = new LpsStatusWindow();
+            statusWindow.UpdateStatus(new[] { (paramName, previewVal) }, 0);
+            if (isDouble)
+                statusWindow.ShowDoubleToggle(true);
+            statusWindow.Show();
+            statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
+
+            var request = new Services.Revit.SideParameterRequest(
+                catItem.Category,
+                paramName,
+                value,
+                isDouble,
+                value2,
+                divider,
+                charCount,
+                prefix,
+                suffix,
+                circuitLimit,
+                SideDirectionDownCheck.IsChecked == true,
+                SideFreezeCheck.IsChecked == true,
+                (result, nextValue1, nextValue2) =>
+                {
+                    statusWindow.Close();
+
+                    this.Show();
+                    this.Activate();
+                    SideResultText.Text        = result;
+                    SideSelectButton.IsEnabled = true;
+
+                    if (nextValue1 != null)
+                    {
+                        SideValueBox.Text = nextValue1;
+                        try
+                        {
+                            var cfg = LoadConfig();
+                            cfg[SideValueKey] = nextValue1;
+                            SaveConfig(cfg);
+                        }
+                        catch { }
+                    }
+                    if (nextValue2 != null)
+                    {
+                        SideValue2Box.Text = nextValue2;
+                        try
+                        {
+                            var cfg = LoadConfig();
+                            cfg[SideValue2Key] = nextValue2;
+                            SaveConfig(cfg);
+                        }
+                        catch { }
+                    }
+                },
+                onStatusUpdate: (paramValues, pickCount) =>
+                    statusWindow.UpdateStatus(paramValues, pickCount),
+                registerNudge: handler => statusWindow.NudgeRequested = handler,
+                registerDoubleToggle: handler => statusWindow.DoubleToggleRequested = handler);
+
+            _externalEventService.Raise(request);
         }
 
         #endregion

@@ -86,5 +86,28 @@ namespace Renumber.UI
 
         private void NudgeUp_Click(object sender, RoutedEventArgs e)   => NudgeRequested?.Invoke(+1);
         private void NudgeDown_Click(object sender, RoutedEventArgs e) => NudgeRequested?.Invoke(-1);
+
+        /// <summary>
+        /// Set this from inside Execute() to be notified when the Double checkbox is toggled.
+        /// The bool argument is the new checked state.
+        /// </summary>
+        public Action<bool> DoubleToggleRequested;
+
+        /// <summary>
+        /// Show the Double checkbox with the given initial state.
+        /// Call this before showing the window when Side double mode is active.
+        /// </summary>
+        public void ShowDoubleToggle(bool initialState)
+        {
+            DoubleToggleCheck.IsChecked = initialState;
+            DoubleToggleSep.Visibility   = Visibility.Visible;
+            DoubleToggleCheck.Visibility = Visibility.Visible;
+        }
+
+        private void DoubleToggleCheck_Checked(object sender, RoutedEventArgs e)
+            => DoubleToggleRequested?.Invoke(true);
+
+        private void DoubleToggleCheck_Unchecked(object sender, RoutedEventArgs e)
+            => DoubleToggleRequested?.Invoke(false);
     }
 }
