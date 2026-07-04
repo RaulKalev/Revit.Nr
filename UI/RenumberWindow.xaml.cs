@@ -91,9 +91,6 @@ namespace Renumber.UI
         private bool _isDataLoaded;
         private readonly UIApplication _uiApplication;
         private readonly Services.Revit.RevitExternalEventService _externalEventService;
-        // LPS state
-        private ObservableCollection<LpsParamEntry> _lpsParams;
-
         // Üld category list entry
         private sealed class UldCategoryItem
         {
@@ -122,15 +119,9 @@ namespace Renumber.UI
             Closed += MainWindow_Closed;
             MouseLeftButtonUp += Window_MouseLeftButtonUp;
 
-            // Initialise LPS param collection before loading config
-            _lpsParams = new ObservableCollection<LpsParamEntry>();
-
             LoadThemeState();
             LoadWindowState();
             LoadParameterNameState();
-
-            // Wire up the LPS param list once controls are ready
-            LpsParamList.ItemsSource = _lpsParams;
 
             // Populate Üld category dropdown, then restore saved selection
             PopulateUldCategories();
@@ -244,8 +235,7 @@ namespace Renumber.UI
                 if (config.TryGetValue(LpsValueKey, out var rawLpsVal) && rawLpsVal is string lv && !string.IsNullOrEmpty(lv))
                     LpsValueBox.Text = lv;
 
-                // LPS param rows
-                _lpsParams.Clear();
+                // LPS fixed rows – load saved names and checked states
                 if (config.TryGetValue(LpsParamsKey, out var rawParams))
                 {
                     JArray arr = null;
@@ -254,23 +244,15 @@ namespace Renumber.UI
 
                     if (arr != null)
                     {
-                        foreach (var tok in arr)
+                        var boxes  = new System.Windows.Controls.TextBox[]  { LpsRow0NameBox, LpsRow1NameBox, LpsRow2NameBox, LpsRow3NameBox, LpsRow4NameBox, LpsRow5NameBox };
+                        var checks = new System.Windows.Controls.CheckBox[] { LpsRow0Check,   LpsRow1Check,   LpsRow2Check,   LpsRow3Check,   LpsRow4Check,   LpsRow5Check   };
+                        for (int i = 0; i < Math.Min(arr.Count, 6); i++)
                         {
-                            var entry = new LpsParamEntry
-                            {
-                                Name           = tok["name"]?.Value<string>() ?? string.Empty,
-                                IsChecked      = tok["checked"]?.Value<bool>() ?? false,
-                                UseInnerRange  = tok["innerRange"]?.Value<bool>() ?? false
-                            };
-                            entry.PropertyChanged += (_, __) => SaveLpsParams();
-                            _lpsParams.Add(entry);
+                            boxes[i].Text       = arr[i]["name"]?.Value<string>() ?? string.Empty;
+                            checks[i].IsChecked = arr[i]["checked"]?.Value<bool>() ?? true;
                         }
                     }
                 }
-
-                // Default: one blank row if list is empty
-                if (_lpsParams.Count == 0)
-                    AddLpsParamRow(string.Empty, isChecked: true, useInnerRange: false);
 
                 // Üld mode flag (checked after LPS so last-saved mode wins)
                 if (TryGetBool(config, UldModeKey, out bool isUld) && isUld)
@@ -560,27 +542,33 @@ namespace Renumber.UI
 
         #endregion
 
-        private void SaveLpsParams()
+        private void SaveLpsRows()
         {
             try
             {
                 var cfg = LoadConfig();
-                var arr = new JArray(_lpsParams.Select(p =>
-                    new JObject(
-                        new JProperty("name",       p.Name),
-                        new JProperty("checked",    p.IsChecked),
-                        new JProperty("innerRange", p.UseInnerRange))));
-                cfg[LpsParamsKey] = arr;
+                cfg[LpsParamsKey] = new JArray(
+                    new JObject(new JProperty("name", LpsRow0NameBox.Text), new JProperty("checked", LpsRow0Check.IsChecked == true)),
+                    new JObject(new JProperty("name", LpsRow1NameBox.Text), new JProperty("checked", LpsRow1Check.IsChecked == true)),
+                    new JObject(new JProperty("name", LpsRow2NameBox.Text), new JProperty("checked", LpsRow2Check.IsChecked == true)),
+                    new JObject(new JProperty("name", LpsRow3NameBox.Text), new JProperty("checked", LpsRow3Check.IsChecked == true)),
+                    new JObject(new JProperty("name", LpsRow4NameBox.Text), new JProperty("checked", LpsRow4Check.IsChecked == true)),
+                    new JObject(new JProperty("name", LpsRow5NameBox.Text), new JProperty("checked", LpsRow5Check.IsChecked == true)));
                 SaveConfig(cfg);
             }
             catch { }
         }
 
-        private void AddLpsParamRow(string name, bool isChecked, bool useInnerRange = false)
+        private void LpsRowName_Changed(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
-            var entry = new LpsParamEntry { Name = name, IsChecked = isChecked, UseInnerRange = useInnerRange };
-            entry.PropertyChanged += (_, __) => SaveLpsParams();
-            _lpsParams.Add(entry);
+            if (!_isDataLoaded) return;
+            SaveLpsRows();
+        }
+
+        private void LpsRowCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (!_isDataLoaded) return;
+            SaveLpsRows();
         }
 
         #region Mode Toggle
@@ -749,32 +737,22 @@ namespace Renumber.UI
 
         #endregion
 
-        #region LPS Param List
-
-        private void LpsAddParam_Click(object sender, RoutedEventArgs e)
-        {
-            AddLpsParamRow(string.Empty, isChecked: false, useInnerRange: false);
-            SaveLpsParams();
-        }
-
-        private void LpsRemoveParam_Click(object sender, RoutedEventArgs e)
-        {
-            if ((sender as System.Windows.Controls.Button)?.Tag is LpsParamEntry entry)
-            {
-                _lpsParams.Remove(entry);
-                SaveLpsParams();
-            }
-        }
-
-        #endregion
-
         #region LPS Select Button
 
         private void LpsSelectButton_Click(object sender, RoutedEventArgs e)
         {
-            var activeSpecs = _lpsParams
-                .Where(p => p.IsChecked && !string.IsNullOrWhiteSpace(p.Name))
-                .Select(p => new Services.Revit.LpsParamSpec(p.Name.Trim(), p.UseInnerRange))
+            var lpsRows = new (System.Windows.Controls.CheckBox Check, System.Windows.Controls.TextBox NameBox, int RowIndex)[]
+            {
+                (LpsRow0Check, LpsRow0NameBox, 0),
+                (LpsRow1Check, LpsRow1NameBox, 1),
+                (LpsRow2Check, LpsRow2NameBox, 2),
+                (LpsRow3Check, LpsRow3NameBox, 3),
+                (LpsRow4Check, LpsRow4NameBox, 4),
+                (LpsRow5Check, LpsRow5NameBox, 5),
+            };
+            var activeSpecs = lpsRows
+                .Where(r => r.Check.IsChecked == true && !string.IsNullOrWhiteSpace(r.NameBox.Text))
+                .Select(r => new Services.Revit.LpsParamSpec(r.NameBox.Text.Trim(), r.RowIndex))
                 .ToList();
 
             if (activeSpecs.Count == 0)
@@ -801,7 +779,9 @@ namespace Renumber.UI
 
             // Show the floating status window next to the main window
             var statusWindow = new LpsStatusWindow();
-            statusWindow.UpdateStatus(activeSpecs.Select(s => (s.Name, value)), 0);
+            statusWindow.UpdateStatus(
+                activeSpecs.Select(s => (s.Name, Services.Revit.LpsParameterRequest.ComputeInitialValue(s.RowIndex, value))),
+                0);
             statusWindow.Show();
             statusWindow.PositionNear(this.Left, this.Top, this.Width, this.Height);
 
@@ -1730,35 +1710,4 @@ namespace Renumber.UI
         #endregion
     }
 
-    /// <summary>
-    /// Represents a single parameter row in the LPS parameters list.
-    /// </summary>
-    public sealed class LpsParamEntry : INotifyPropertyChanged
-    {
-        private string _name = string.Empty;
-        private bool _isChecked;
-        private bool _useInnerRange;
-
-        public string Name
-        {
-            get => _name;
-            set { if (_name != value) { _name = value; OnPropertyChanged(); } }
-        }
-
-        public bool IsChecked
-        {
-            get => _isChecked;
-            set { if (_isChecked != value) { _isChecked = value; OnPropertyChanged(); } }
-        }
-
-        public bool UseInnerRange
-        {
-            get => _useInnerRange;
-            set { if (_useInnerRange != value) { _useInnerRange = value; OnPropertyChanged(); } }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        private void OnPropertyChanged([CallerMemberName] string name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
 }

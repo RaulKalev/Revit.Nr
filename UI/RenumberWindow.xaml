@@ -244,7 +244,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />  <!-- Parameters label + Add button -->
                             <RowDefinition Height="6" />
-                            <RowDefinition Height="Auto" MaxHeight="160" />  <!-- Param list -->
+                            <RowDefinition Height="Auto" />  <!-- Param list -->
                             <RowDefinition Height="14" />
                             <RowDefinition Height="Auto" />  <!-- Value label -->
                             <RowDefinition Height="6" />
@@ -255,84 +255,149 @@
                             <RowDefinition Height="*" />     <!-- Result text -->
                         </Grid.RowDefinitions>
 
-                        <!-- Parameters label + Add button -->
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0"
-                                       Text="Parameters"
-                                       Foreground="{DynamicResource ForegroundBrush}"
-                                       FontSize="11" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" />
-                            <Button Grid.Column="1"
-                                    x:Name="LpsAddParamButton"
-                                    Content="+"
-                                    Click="LpsAddParam_Click"
-                                    Style="{StaticResource CustomActionButtonStyle}"
-                                    Width="32" Height="24"
-                                    Padding="0"
-                                    FontSize="16" FontWeight="Bold" />
-                        </Grid>
+                        <!-- Parameters label -->
+                        <TextBlock Grid.Row="0"
+                                   Text="Parameters"
+                                   Foreground="{DynamicResource ForegroundBrush}"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
 
-                        <!-- Parameter row list -->
-                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                            <ItemsControl x:Name="LpsParamList">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="0,2,0,2">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />  <!-- Active CB -->
-                                                <ColumnDefinition Width="*" />     <!-- Name TextBox -->
-                                                <ColumnDefinition Width="Auto" />  <!-- Value CB -->
-                                                <ColumnDefinition Width="Auto" />  <!-- InnerRange CB -->
-                                                <ColumnDefinition Width="Auto" />  <!-- Remove button -->
-                                            </Grid.ColumnDefinitions>
-                                            <!-- Active (left) checkbox -->
-                                            <CheckBox Grid.Column="0"
-                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,6,0" />
-                                            <!-- Parameter name -->
-                                            <TextBox Grid.Column="1"
-                                                     Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource CustomTextBoxStyle}"
-                                                     Width="90"
-                                                     HorizontalAlignment="Left"
-                                                     Margin="0,0,6,0"
-                                                     VerticalAlignment="Center" />
-                                            <!-- Value sequence checkbox (!UseInnerRange) -->
-                                            <CheckBox Grid.Column="2"
-                                                      Content="Value"
-                                                      IsChecked="{Binding UseInnerRange, Mode=TwoWay,
-                                                                  Converter={StaticResource InverseBoolConverter}}"
-                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,0,0" />
-                                            <!-- InnerRange sequence checkbox -->
-                                            <CheckBox Grid.Column="3"
-                                                      Content="IR"
-                                                      IsChecked="{Binding UseInnerRange, Mode=TwoWay}"
-                                                      Style="{StaticResource CustomCheckboxStyleCompact}"
-                                                      VerticalAlignment="Center"
-                                                      Margin="4,0,0,0" />
-                                            <!-- Remove button -->
-                                            <Button Grid.Column="4"
-                                                    Content="−"
-                                                    Tag="{Binding}"
-                                                    Click="LpsRemoveParam_Click"
-                                                    Style="{StaticResource CustomActionButtonStyle}"
-                                                    Width="28" Height="24"
-                                                    Padding="0"
-                                                    FontSize="14" FontWeight="Bold"
-                                                    Margin="6,0,0,0" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
+                        <!-- Fixed 6-row parameter grid -->
+                        <Grid Grid.Row="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="26" />
+                                <RowDefinition Height="4" />
+                                <RowDefinition Height="26" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Row 0: Reader -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow0Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="Reader"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow0NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+
+                            <!-- Row 1: Magnet -->
+                            <Grid Grid.Row="2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow1Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="Magnet"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow1NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+
+                            <!-- Row 2: Lock tongue -->
+                            <Grid Grid.Row="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow2Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="Lock tongue"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow2NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+
+                            <!-- Row 3: REX -->
+                            <Grid Grid.Row="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow3Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="REX"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow3NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+
+                            <!-- Row 4: REN -->
+                            <Grid Grid.Row="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow4Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="REN"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow4NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+
+                            <!-- Row 5: Lock -->
+                            <Grid Grid.Row="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="76" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0" x:Name="LpsRow5Check" IsChecked="True"
+                                          Style="{StaticResource CustomCheckboxStyleCompact}"
+                                          VerticalAlignment="Center" Margin="0,0,6,0"
+                                          Checked="LpsRowCheck_Changed" Unchecked="LpsRowCheck_Changed" />
+                                <TextBlock Grid.Column="1" Text="Lock"
+                                           Foreground="{DynamicResource ForegroundBrush}"
+                                           FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                <TextBox Grid.Column="2" x:Name="LpsRow5NameBox"
+                                         Style="{StaticResource CustomTextBoxStyle}"
+                                         VerticalAlignment="Center"
+                                         TextChanged="LpsRowName_Changed" />
+                            </Grid>
+                        </Grid>
 
                         <!-- Value label + direction -->
                         <Grid Grid.Row="4">
